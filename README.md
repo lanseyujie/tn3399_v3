@@ -108,3 +108,27 @@ miniterm /dev/ttyUSB0 1500000
 
 # 退出 miniterm 快捷键为 Ctrl + ]
 ```
+
+## 系统配置
+
+### 网络
+
+```shell
+# WiFi 配置
+nmcli dev wifi connect "hotspot-name" password "password"
+```
+
+### 本地化
+
+```shell
+# 安装英文与简体中文语言包
+sudo apt install -y language-pack-en language-pack-zh-hans
+# 设置本地化
+sudo dpkg-reconfigure locales
+
+# 配置时区
+sudo apt install -y tzdata
+sudo dpkg-reconfigure tzdata
+# 同步硬件时间
+sudo hwclock -s
+```
