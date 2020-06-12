@@ -25,17 +25,17 @@
 
 >   相关工具：https://github.com/rockchip-linux/rkbin
 
-1.  创建 udev 规则
+1.  创建 udev 规则。
 
-    可以避免无 sudo 权限时不能发送指令或烧写报错 Creating Comm Object failed!
+    可以避免无 sudo 权限时不能发送指令或烧写报错 “Creating Comm Object failed!”。
 
 ```shell
 echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0660", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/51-android.rules
 ```
 
-2.  连接 Micro-USB，长按 RECOVER 键并上电
+2.  进入烧写模式。
 
-    如果为 Android 系统此时应为 Loader 模式，其他系统可能为 MaskRom 模式
+    连接 Micro-USB，长按 RECOVER 键并上电，如果为 Android 系统此时应为 Loader 模式，其他系统可能为 MaskRom 模式。
 
 ```shell
 # 查看连接的设备
@@ -59,20 +59,20 @@ DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    MaskRom
 rkdeveloptool rd 3
 ```
 
-3.  烧写固件
+3.  烧写固件。
 
-    烧写 u-boot 需要在 MaskRom 模式下进行，否则报错 The device does not support this operation!
+    烧写 u-boot 需要在 MaskRom 模式下进行，否则报错 “The device does not support this operation!”。
 
 ```shell
 # u-boot
-$ ./rkbin/tools/upgrade_tool db ./RK3399MiniLoaderAll_V1.05.bin
+./rkbin/tools/upgrade_tool db ./RK3399MiniLoaderAll_V1.05.bin
 # 或
-$ rkdeveloptool db ./RK3399MiniLoaderAll_V1.05.bin
+rkdeveloptool db ./RK3399MiniLoaderAll_V1.05.bin
 
 # system
-$ ./rkbin/tools/upgrade_tool wl 0x0 ./system.img
+./rkbin/tools/upgrade_tool wl 0x0 ./system.img
 # 或
-$ rkdeveloptool wl 0x0 ./system.img
+rkdeveloptool wl 0x0 ./system.img
 ```
 
 #### 烧写到 SDCard
@@ -97,14 +97,14 @@ sudo dd if=system.img of=/dev/sdX bs=4M oflag=sync status=noxfer
 ```shell
 # 解决串口权限问题
 sudo usermod -a -G dialout $USER
+# 重新登录后生效
 reboot
 
 # 安装串口通信软件
-sudo apt install python3-serial -y
+sudo apt install -y python3-serial
 
 # 打开串口
 miniterm /dev/ttyUSB0 1500000
 
 # 退出 miniterm 快捷键为 Ctrl + ]
 ```
-
