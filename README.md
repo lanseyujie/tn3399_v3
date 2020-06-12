@@ -132,3 +132,32 @@ sudo dpkg-reconfigure tzdata
 # 同步硬件时间
 sudo hwclock -s
 ```
+
+## 常见问题
+
+Q：操作正确，能进 MaskRom 也能更新系统 ，但没法更新 u-boot。
+
+A：连接串口并打开串口调试软件，开机后迅速在调试窗口按任意键，打断 uboot 启动（如果不能打断请更换 CP2104 方案的串口），执行如下命令破坏 uboot，重启后会自动进入 MaskRom 模式。
+
+```shell
+mmc dev 0
+mmc erase 0 200
+reset
+```
+
+---
+
+Q：使用 apt 更新软件包时出现如下警告：
+
+>   perl: warning: Setting locale failed.
+>   perl: warning: Please check that your locale settings:
+>           LANGUAGE = (unset),
+>           LC_ALL = (unset),
+>           LANG = "zh_CN.UTF-8"
+>       are supported and installed on your system.
+>   perl: warning: Falling back to the standard locale ("C").
+
+A：参考 系统配置-本地化 一节安装相应语言包即可解决。
+
+---
+
