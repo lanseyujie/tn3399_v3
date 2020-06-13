@@ -70,17 +70,80 @@ apt install -y build-essential libncurses5-dev git make
 
 ### u-boot
 
+#### 设备树
+
+```shell
+# 设备树的编译与反编译
+apt install -y device-tree-compiler
+
+# dtb => dts
+dtc -I dtb -O dts -o tn3399-linux.dts tn3399-linux.dtb
+# dts => dtb
+dtc -I dts -O dtb -o tn3399-linux.dtb tn3399-linux.dts
+```
+
+#### 编译
+
+1.  原版 u-boot
+
+```shell
+git clone https://github.com/ARM-software/arm-trusted-firmware.git
+cd arm-trusted-firmware
+
+# 编译 ATF
+make CROSS_COMPILE=aarch64-linux-gnu- PLAT=rk3399
+# 得到 build/rk3399/release/bl31/bl31.elf
+
+export BL31=/data/arm-trusted-firmware/build/rk3399/release/bl31/bl31.elf
+
+apt install -y bison flex python3 device-tree-compiler bc
+git clone https://github.com/u-boot/u-boot.git
+cd u-boot
+
+# 生成 .config 配置文件
+make evb-rk3399_defconfig
+# 或者自定义配置
+make menuconfig
+
+# 编译 u-boot
+make CROSS_COMPILE=aarch64-linux-gnu-
+# 得到 idbloader.img 和 u-boot.itb
+# idbloader.img 是 TPL 和 SPL 的合成文件，前者负责 DDR 初始化，后者负责加载 ATF 和 u-boot
+# u-boot.itb 是由 u-boot 和 ATF 合成的 FIT 格式的镜像文件
+```
+
+2.  RockChip 修改的 u-boot
+
+```shell
+# 用于合并 loader 的工具集
+git clone https://github.com/rockchip-linux/rkbin.git
+
+apt install -y bison flex python3 device-tree-compiler bc
+git clone -b stable-4.4-rk3399-linux https://github.com/rockchip-linux/u-boot.git
+cd u-boot
+
+# 不使用项目指定工具链
+sed -i 's@TOOLCHAIN_ARM32=.*@TOOLCHAIN_ARM32=/@g' ./make.sh
+sed -i 's@TOOLCHAIN_ARM64=.*@TOOLCHAIN_ARM64=/@g' ./make.sh
+sed -i 's@${absolute_path}/bin/@@g' ./make.sh
+
+# 编译修改过的 u-boot
+./make.sh evb-rk3399
+# 得到如下文件
+rk3399_loader_v1.24.125.bin
+trust.img
+uboot.img
+
+# 也可以从此项目编译原版 u-boot
+```
+
+### kernel
+
 ```shell
 
 ```
 
 ### rootfs
-
-```shell
-
-```
-
-### kernel
 
 ```shell
 
@@ -229,4 +292,8 @@ Q：使用 apt 更新软件包时出现如下警告：
 A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
 ---
+
+[1]: https://aijishu.com/a/1060000000079034 "U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署"
+
+[2]: http://opensource.rock-chips.com/wiki_U-Boot "U-Boot - Rockchip open source Document"
 
