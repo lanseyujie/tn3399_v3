@@ -84,7 +84,7 @@ dtc -I dts -O dtb -o tn3399-linux.dtb tn3399-linux.dts
 
 #### 编译
 
-1.  原版 u-boot
+##### 原版 u-boot[^1][^2]
 
 ```shell
 git clone https://github.com/ARM-software/arm-trusted-firmware.git
@@ -112,7 +112,7 @@ make CROSS_COMPILE=aarch64-linux-gnu-
 # u-boot.itb 是由 u-boot 和 ATF 合成的 FIT 格式的镜像文件
 ```
 
-2.  RockChip 修改的 u-boot
+##### RockChip 维护的 u-boot[^3]
 
 ```shell
 # 用于合并 loader 的工具集
@@ -139,11 +139,37 @@ uboot.img
 
 ### kernel
 
+#### 编译
+
+##### 原版 kernel
+
+```shell
+
+```
+
+##### RockChip 维护的 kernel[^4]
+
 ```shell
 
 ```
 
 ### rootfs
+
+#### 制作
+
+```shell
+
+```
+
+### 镜像
+
+#### 打包
+
+```shell
+
+```
+
+#### 修改
 
 ```shell
 
@@ -157,15 +183,15 @@ uboot.img
 
 >   相关工具：https://github.com/rockchip-linux/rkbin
 
-1.  创建 udev 规则。
+1.  创建 udev 规则
 
     可以避免无 sudo 权限时不能发送指令或烧写报错 “Creating Comm Object failed!”。
 
 ```shell
-echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0660", GROUP="plugdev"' | sudo tee /etc/udev/rules.d/51-android.rules
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0660", GROUP="plugdev"' | sudo tee -a /etc/udev/rules.d/51-android.rules
 ```
 
-2.  进入烧写模式。
+2.  进入烧写模式
 
     连接 Micro-USB，长按 RECOVER 键并上电，如果为 Android 系统此时应为 Loader 模式，其他系统可能为 MaskRom 模式。
 
@@ -191,7 +217,7 @@ DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    MaskRom
 rkdeveloptool rd 3
 ```
 
-3.  烧写固件。
+3.  烧写固件
 
     烧写 u-boot 需要在 MaskRom 模式下进行，否则报错 “The device does not support this operation!”。
 
@@ -215,7 +241,7 @@ rkdeveloptool wl 0x0 ./system.img
 
 ```shell
 # sdX 为 sdcard 对应的块设备文件
-sudo dd if=system.img of=/dev/sdX bs=4M oflag=sync status=noxfer
+sudo dd if=system.img of=/dev/sdX bs=4M oflag=sync status=progress
 ```
 
 ### 串口调试
@@ -283,17 +309,20 @@ Q：使用 apt 更新软件包时出现如下警告：
 
 >   perl: warning: Setting locale failed.
 >   perl: warning: Please check that your locale settings:
->           LANGUAGE = (unset),
->           LC_ALL = (unset),
->           LANG = "zh_CN.UTF-8"
->       are supported and installed on your system.
+>          LANGUAGE = (unset),
+>          LC_ALL = (unset),
+>          LANG = "zh_CN.UTF-8"
+>      are supported and installed on your system.
 >   perl: warning: Falling back to the standard locale ("C").
 
 A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
----
+## 参考资料
 
-[1]: https://aijishu.com/a/1060000000079034 "U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署"
+[^1]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034 )
 
-[2]: http://opensource.rock-chips.com/wiki_U-Boot "U-Boot - Rockchip open source Document"
+[^2]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
 
+[^3]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
+
+[^4]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
