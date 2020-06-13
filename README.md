@@ -17,6 +17,75 @@
 | HDMI 2.0+LVDS |  358775G + ALC5640   |                                                              |
 |   Audio PA    |        NS4258        |                            5W x 2                            |
 
+## 固件编译
+
+### 编译环境
+
+```shell
+# 拉取镜像
+docker pull ubuntu:20.04
+# 启动容器
+docker run -it --name builder -v $HOME/build/:/data/ ubuntu:20.04 bash
+
+# 更换软件源
+cp -a /etc/apt/sources.list /etc/apt/sources.list.bak
+sed -i "s@http://.*archive.ubuntu.com@http://mirrors.huaweicloud.com@g" /etc/apt/sources.list
+sed -i "s@http://.*security.ubuntu.com@http://mirrors.huaweicloud.com@g" /etc/apt/sources.list
+
+# 更新软件包
+apt update && apt upgrade -y
+
+# 进入工作目录
+cd /data/
+```
+
+### 工具链
+
+```shell
+# arm64 工具链
+# 主页：https://www.linaro.org/downloads/
+wget -c https://releases.linaro.org/components/toolchain/binaries/latest-7/aarch64-linux-gnu/gcc-linaro-7.5.0-2019.12-x86_64_aarch64-linux-gnu.tar.xz
+# 或者使用镜像
+wget -c https://mirrors.tuna.tsinghua.edu.cn/armbian-releases/_toolchains/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu.tar.xz
+
+# 解压工具链
+mkdir toolchain
+tar xvJf gcc-linaro-*-x86_64_aarch64-linux-gnu.tar.xz -C ./toolchain --strip-components=1
+
+# arm 裸机工具链，主要用于编译 ATF
+apt install -y gcc-arm-none-eabi
+# 或者自行下载并配置
+# 主页：https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain/gnu-rm/downloads
+wget -c https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/9-2020q2/gcc-arm-none-eabi-9-2020-q2-update-x86_64-linux.tar.bz2
+
+# 配置环境变量
+export PATH=/data/toolchain/bin:$PATH
+# 测试
+aarch64-linux-gnu-gcc -v
+arm-none-eabi-gcc -v
+
+# 安装辅助工具
+apt install -y build-essential libncurses5-dev git make
+```
+
+### u-boot
+
+```shell
+
+```
+
+### rootfs
+
+```shell
+
+```
+
+### kernel
+
+```shell
+
+```
+
 ## 烧写调试
 
 ### 固件烧写
