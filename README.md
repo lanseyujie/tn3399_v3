@@ -166,13 +166,56 @@ uboot.img
 #### 打包
 
 ```shell
+mkdir -p out/{kernel,u-boot}
+out/
+├── kernel
+│   ├── Image
+│   └── tn3399-linux.dtb
+├── rootfs.img
+└── u-boot
+    ├── idbloader.img
+    ├── trust.img
+    └── uboot.img
 
+# 生成 boot.img
+cd out && ../scripts/build-image.sh -t boot
+# boot.img 内的文件结构
+boot.img
+├── extlinux
+│   └── extlinux.conf
+├── Image
+└── tn3399-linux.dtb
+
+# 生成 system.img
+cd out && ../scripts/build-image.sh -t system
 ```
 
 #### 修改
 
 ```shell
+# -f 查找第一个未使用的设备
+# -P 创建带分区的回环设备
+sudo losetup -f --show -P system.img
 
+# 查看镜像的分区信息
+fdisk -l system.img
+
+# 挂载分区 3
+sudo mount /dev/loop0p3 /mnt/
+# 另一种方法，$begin 为分区 3 的起点
+sudo mount -o loop,offset=$((512 * $begin)) system.img /mnt/
+
+# 在此执行自定义修改命令
+
+# 卸载分区
+# 注意：卸载时 shell 不可以处于 /mnt/ 下，否则报错 umount: /mnt: target is busy.
+sudo umount /mnt/
+
+# 断开回环设备
+sudo losetup -d /dev/loop0
+
+# 断开所有回环设备
+sudo losetup -D
 ```
 
 ## 烧写调试
