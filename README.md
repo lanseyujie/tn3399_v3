@@ -220,6 +220,94 @@ sudo losetup -D
 
 ## 烧写调试
 
+### 出厂固件[^5]
+
+#### 备份
+
+```shell
+# 查看 cmdline
+adb shell
+su
+cat /proc/cmdline
+
+# 查看分区表
+./rkbin/tools/upgrade_tool pl
+# 或
+rkdeveloptool ppt
+
+# 备份分区
+./rkbin/tools/upgrade_tool rl 0x00002000 0x00002000 uboot.img
+./rkbin/tools/upgrade_tool rl 0x00004000 0x00002000 trust.img
+./rkbin/tools/upgrade_tool rl 0x00006000 0x00002000 misc.img
+./rkbin/tools/upgrade_tool rl 0x00008000 0x00008000 resource.img
+./rkbin/tools/upgrade_tool rl 0x00010000 0x0000c000 kernel.img
+./rkbin/tools/upgrade_tool rl 0x0001c000 0x00010000 boot.img
+./rkbin/tools/upgrade_tool rl 0x0002c000 0x00010000 recovery.img
+./rkbin/tools/upgrade_tool rl 0x0003c000 0x00038000 backup.img
+./rkbin/tools/upgrade_tool rl 0x00074000 0x00040000 cache.img
+./rkbin/tools/upgrade_tool rl 0x000b4000 0x00300000 system.img
+./rkbin/tools/upgrade_tool rl 0x003b4000 0x00008000 metadata.img
+./rkbin/tools/upgrade_tool rl 0x003bc000 0x00000040 verity_mode.img
+./rkbin/tools/upgrade_tool rl 0x003bc040 0x00002000 baseparamer.img
+./rkbin/tools/upgrade_tool rl 0x003be040 0x00000400 frp.img
+./rkbin/tools/upgrade_tool rl 0x003be440 0x00300000 userdata.img
+# 或直接使用 rkdeveloptool 代替 upgrade_tool
+```
+
+#### 恢复
+
+```shell
+# 擦除 FLash
+./rkbin/tools/upgrade_tool ef ./rk3399_loader_v1.22.119.bin
+# 下载 Loader
+.rkbin/tools/upgrade_tool ul ./rk3399_loader_v1.22.119.bin
+# 下载分区表
+./rkbin/tools/upgrade_tool di -p parameter_gpt.txt
+# 下载镜像
+./rkbin/tools/upgrade_tool di -uboot uboot.img
+./rkbin/tools/upgrade_tool di -trust trust.img
+./rkbin/tools/upgrade_tool di -misc misc.img
+./rkbin/tools/upgrade_tool di -resource resource.img
+./rkbin/tools/upgrade_tool di -k kernel.img
+./rkbin/tools/upgrade_tool di -b boot.img
+./rkbin/tools/upgrade_tool di -recovery recovery.img
+./rkbin/tools/upgrade_tool di -backup backup.img
+./rkbin/tools/upgrade_tool di -cache cache.img
+./rkbin/tools/upgrade_tool di -s system.img
+./rkbin/tools/upgrade_tool di -metadata metadata.img
+./rkbin/tools/upgrade_tool di -verity_mode verity_mode.img
+./rkbin/tools/upgrade_tool di -baseparamer baseparamer.img
+./rkbin/tools/upgrade_tool di -frp frp.img
+./rkbin/tools/upgrade_tool di -userdata userdata.img
+
+# 或
+
+# 初始化 DRAM
+rkdeveloptool db ./rk3399_loader_v1.22.119.bin
+# 擦除 FLash
+rkdeveloptool ef
+# 下载 Loader
+rkdeveloptool ul ./rk3399_loader_v1.22.119.bin
+# 下载分区表
+rkdeveloptool gpt ./parameter_gpt.txt
+# 下载镜像
+rkdeveloptool wl 0x00002000 uboot.img
+rkdeveloptool wl 0x00004000 trust.img
+rkdeveloptool wl 0x00006000 misc.img
+rkdeveloptool wl 0x00008000 resource.img
+rkdeveloptool wl 0x00010000 kernel.img
+rkdeveloptool wl 0x0001c000 boot.img
+rkdeveloptool wl 0x0002c000 recovery.img
+rkdeveloptool wl 0x0003c000 backup.img
+rkdeveloptool wl 0x00074000 cache.img
+rkdeveloptool wl 0x000b4000 system.img
+rkdeveloptool wl 0x003b4000 metadata.img
+rkdeveloptool wl 0x003bc000 verity_mode.img
+rkdeveloptool wl 0x003bc040 baseparamer.img
+rkdeveloptool wl 0x003be040 frp.img
+rkdeveloptool wl 0x003be440 userdata.img
+```
+
 ### 固件烧写
 
 #### 烧写到 eMMC
@@ -265,12 +353,12 @@ rkdeveloptool rd 3
     烧写 u-boot 需要在 MaskRom 模式下进行，否则报错 “The device does not support this operation!”。
 
 ```shell
-# u-boot
-./rkbin/tools/upgrade_tool db ./RK3399MiniLoaderAll_V1.05.bin
+# 初始化 DRAM
+./rkbin/tools/upgrade_tool db ./rk3399_loader_v1.22.119.bin
 # 或
-rkdeveloptool db ./RK3399MiniLoaderAll_V1.05.bin
+rkdeveloptool db ./rk3399_loader_v1.22.119.bin
 
-# system
+# 下载镜像
 ./rkbin/tools/upgrade_tool wl 0x0 ./system.img
 # 或
 rkdeveloptool wl 0x0 ./system.img
@@ -336,13 +424,13 @@ sudo hwclock -s
 
 ## 常见问题
 
-Q：操作正确，能进 MaskRom 也能更新系统 ，但没法更新 u-boot。
+Q：能进 MaskRom 模式 ，但下载 Loader 初始化 DRAM 总是失败。或 u-boot 无等待时间不能按 RECOVERY 键进入 MaskRom。
 
-A：连接串口并打开串口调试软件，开机后迅速在调试窗口按任意键，打断 uboot 启动（如果不能打断请更换 CP2104 方案的串口），执行如下命令破坏 uboot，重启后会自动进入 MaskRom 模式。
+A：插上带有系统的 SDCard，默认会从 SDcard 启动，连接串口并打开串口调试软件，开机后迅速在调试窗口按任意键，打断 u-boot 启动（如果不能打断请更换 CP2104 方案的串口），执行如下命令破坏 u-boot，重启后会自动进入 MaskRom 模式。
 
 ```shell
 mmc dev 0
-mmc erase 0 200
+mmc erase 0 2000
 reset
 ```
 
@@ -362,10 +450,8 @@ A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
 ## 参考资料
 
-[^1]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034 )
-
+[^1]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034)
 [^2]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
-
 [^3]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
-
 [^4]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
+[^5]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool
