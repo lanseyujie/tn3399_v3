@@ -139,8 +139,6 @@ uboot.img
 
 ### kernel
 
-#### 编译
-
 ##### 原版 kernel
 
 ```shell
@@ -155,13 +153,11 @@ uboot.img
 
 ### rootfs
 
-#### 制作
-
 ```shell
 
 ```
 
-### 镜像
+### 镜像制作
 
 #### 打包
 
@@ -310,7 +306,7 @@ rkdeveloptool wl 0x003be440 userdata.img
 
 ### 固件烧写
 
-#### 烧写到 eMMC
+#### eMMC
 
 >   相关工具：https://github.com/rockchip-linux/rkbin
 
@@ -364,7 +360,7 @@ rkdeveloptool db ./rk3399_loader_v1.22.119.bin
 rkdeveloptool wl 0x0 ./system.img
 ```
 
-#### 烧写到 SDCard
+#### SDCard
 
 >   也可以使用图形化烧写工具 balena-etcher-electron
 >
@@ -377,7 +373,9 @@ sudo dd if=system.img of=/dev/sdX bs=4M oflag=sync status=progress
 
 ### 串口调试
 
->   测试了市面上常见的几款 CH340G、PL2303HX 方案的串口，均存在只能读不能写问题，建议使用 CP2104 方案的串口代替。
+#### 串口选择
+
+测试了市面上常见的几款 CH340G、PL2303HX 方案的串口，均存在只能读不能写问题，这将无法从串口打断 u-boot 启动和进行 shell 操作，建议使用 CP2104 方案的串口代替。
 
 #### 通信软件
 
@@ -424,7 +422,7 @@ sudo hwclock -s
 
 ## 常见问题
 
-Q：能进 MaskRom 模式 ，但下载 Loader 初始化 DRAM 总是失败。或 u-boot 无等待时间不能按 RECOVERY 键进入 MaskRom。
+Q：能进 MaskRom 模式，但下载 Loader 初始化 DRAM 总是失败。或 u-boot 无等待时间不能按 RECOVERY 键进入 MaskRom 模式。
 
 A：插上带有系统的 SDCard，默认会从 SDcard 启动，连接串口并打开串口调试软件，开机后迅速在调试窗口按任意键，打断 u-boot 启动（如果不能打断请更换 CP2104 方案的串口），执行如下命令破坏 u-boot，重启后会自动进入 MaskRom 模式。
 
@@ -451,7 +449,11 @@ A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 ## 参考资料
 
 [^1]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034)
+
 [^2]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
+
 [^3]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
+
 [^4]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
+
 [^5]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool
