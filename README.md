@@ -154,7 +154,34 @@ uboot.img
 ### rootfs
 
 ```shell
+mkdir ~/rootfs
+wget -c http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04-base-arm64.tar.gz
 
+sudo apt install -y qemu-user-static
+# 创建 2G 空白文件
+dd if=/dev/zero of=system.img bs=1M count=2048 oflag=sync status=progress
+# 格式化为 ext4 分区
+mkfs.ext4 ./system.img
+
+# 挂载镜像
+sudo mount system.img ~/rootfs
+# 解压 rootfs 到挂载的分区
+sudo tar zxvf ubuntu-base-20.04-base-arm64.tar.gz -C ~/rootfs
+
+# 模拟 aarch64 虚拟环境
+sudo cp /usr/bin/qemu-aarch64-static ~/rootfs/usr/bin/
+sudo cp -b /etc/resolv.conf ~/rootfs/etc/resolv.conf
+sudo chroot ~/rootfs
+# 自定义修改命令在此执行
+exit
+
+# 卸载镜像
+sudo umount ~/rootfs/
+
+# 检查并修复文件系统
+e2fsck -p -f system.img
+# 压缩镜像
+resize2fs -M system.img
 ```
 
 ### 镜像制作
