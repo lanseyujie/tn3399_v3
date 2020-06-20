@@ -141,8 +141,34 @@ uboot.img
 
 ##### 原版 kernel
 
-```shell
+>   此仓库巨大，.git 约占用 3 GB，编译后约占用 8 GB，请至少留有 10 GB 硬盘空间，编译大约需要 40 分钟。
 
+```shell
+apt install -y libssl-dev lzop
+git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
+
+# 或从镜像快速克隆
+git clone https://mirrors.tuna.tsinghua.edu.cn/git/linux.git
+cd linux
+git remote add upstream https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
+git fetch upstream
+
+# 切换内核版本
+git checkout linux-5.4.y
+
+export ARCH=arm64
+
+# 生成 .config 配置文件
+make defconfig
+# 或者自定义配置
+make menuconfig
+make savedefconfig
+
+# 编译内核
+make CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+# 得到如下文件
+arch/arm64/boot/dts/rockchip/rk3399-evb.dtb
+arch/arm64/boot/Image
 ```
 
 ##### RockChip 维护的 kernel[^4]
@@ -168,7 +194,7 @@ sudo mount system.img ~/rootfs
 # 解压 rootfs 到挂载的分区
 sudo tar zxvf ubuntu-base-20.04-base-arm64.tar.gz -C ~/rootfs
 
-# 模拟 aarch64 虚拟环境
+# 模拟 aarch64 环境
 sudo cp /usr/bin/qemu-aarch64-static ~/rootfs/usr/bin/
 sudo cp -b /etc/resolv.conf ~/rootfs/etc/resolv.conf
 sudo chroot ~/rootfs
@@ -483,4 +509,4 @@ A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
 [^4]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
 
-[^5]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool
+[^5]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool)
