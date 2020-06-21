@@ -195,32 +195,17 @@ sudo cp -b /etc/resolv.conf ./rootfs/etc/resolv.conf
 # 内核模块、驱动固件移植
 
 # 挂载相关路径并 chroot
-sudo ./scripts/rootfs.sh -m ./rootfs/
+./scripts/rootfs.sh -m ./rootfs/
 # 自定义修改命令在此执行
 # 修改镜像源、安装 init 等必要的软件包、映射 ttyS2 Console 等
 exit
-sudo ./scripts/rootfs.sh -u ./rootfs/
+./scripts/rootfs.sh -u ./rootfs/
 
 # release 时删除此文件
 # sudo rm -f ./rootfs/usr/bin/qemu-aarch64-static
 
-# 创建 2G 空白文件
-dd if=/dev/zero of=./rootfs.img bs=1M count=2048 oflag=sync status=progress
-# 格式化为 ext4 分区
-mkfs.ext4 ./rootfs.img
-
-# 挂载镜像
-sudo mount rootfs.img /mnt/
-# 复制 rootfs 文件到镜像中
-sudo cp -rfp ./rootfs/* /mnt/
-
-# 卸载镜像
-sudo umount /mnt/
-
-# 检查并修复文件系统
-e2fsck -p -f rootfs.img
-# 压缩镜像
-resize2fs -M rootfs.img
+# 构建 rootfs 镜像
+./scripts/build-image.sh rootfs ./rootfs/
 ```
 
 ### 镜像制作
@@ -228,20 +213,20 @@ resize2fs -M rootfs.img
 #### 打包
 
 ```shell
-mkdir -p out/{kernel,u-boot}
-out/
+# 按如下目录结构整理编译所得的文件
+mkdir -p ./out/{kernel,u-boot}
+./out/
 ├── kernel
 │   ├── Image
 │   └── tn3399-linux.dtb
-├── rootfs.img
 └── u-boot
     ├── idbloader.img
     ├── trust.img
     └── u-boot.img
 
 # 生成 boot.img
-cd out && ../scripts/build-image.sh -t boot
-# boot.img 内的文件结构
+cd ./out/ && ../scripts/build-image.sh boot
+# boot.img 内的目录结构
 boot.img
 ├── extlinux
 │   └── extlinux.conf
@@ -249,7 +234,7 @@ boot.img
 └── tn3399-linux.dtb
 
 # 生成 system.img
-cd out && ../scripts/build-image.sh -t system
+cd ./out/ && ../scripts/build-image.sh system
 ```
 
 #### 修改
