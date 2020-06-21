@@ -101,7 +101,7 @@ git clone https://github.com/u-boot/u-boot.git
 cd u-boot
 
 # 生成 .config 配置文件
-make evb-rk3399_defconfig
+make rock960-rk3399_defconfig
 # 或者自定义配置
 make menuconfig
 
@@ -144,7 +144,7 @@ uboot.img
 >   此仓库巨大，.git 约占用 3 GB，编译后约占用 8 GB，请至少留有 10 GB 硬盘空间，编译大约需要 40 分钟。
 
 ```shell
-apt install -y libssl-dev lzop
+apt install -y libssl-dev lzop kmod
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
 # 或从镜像快速克隆
@@ -164,10 +164,10 @@ make defconfig
 make menuconfig
 make savedefconfig
 
-# 编译内核
+# 编译 kernel
 make CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
 # 得到如下文件
-arch/arm64/boot/dts/rockchip/rk3399-evb.dtb
+arch/arm64/boot/dts/rockchip/rk3399-rock960.dtb
 arch/arm64/boot/Image
 ```
 
@@ -180,34 +180,47 @@ arch/arm64/boot/Image
 ### rootfs
 
 ```shell
-mkdir ~/rootfs
+mkdir ./rootfs/
 wget -c http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04-base-arm64.tar.gz
 
 sudo apt install -y qemu-user-static
-# 创建 2G 空白文件
-dd if=/dev/zero of=system.img bs=1M count=2048 oflag=sync status=progress
-# 格式化为 ext4 分区
-mkfs.ext4 ./system.img
 
-# 挂载镜像
-sudo mount system.img ~/rootfs
-# 解压 rootfs 到挂载的分区
-sudo tar zxvf ubuntu-base-20.04-base-arm64.tar.gz -C ~/rootfs
+# 解压并保留原始文件权限
+sudo tar -xpf ubuntu-base-20.04-base-arm64.tar.gz -C ./rootfs/
 
 # 模拟 aarch64 环境
-sudo cp /usr/bin/qemu-aarch64-static ~/rootfs/usr/bin/
-sudo cp -b /etc/resolv.conf ~/rootfs/etc/resolv.conf
-sudo chroot ~/rootfs
+sudo cp /usr/bin/qemu-aarch64-static ./rootfs/usr/bin/
+# 配置同本机一样的 DNS 用于之后的联网更新
+sudo cp -b /etc/resolv.conf ./rootfs/etc/resolv.conf
+# 内核模块、驱动固件移植
+
+# 挂载相关路径并 chroot
+sudo ./scripts/rootfs.sh -m ./rootfs/
 # 自定义修改命令在此执行
+# 修改镜像源、安装 init 等必要的软件包、映射 ttyS2 Console 等
 exit
+sudo ./scripts/rootfs.sh -u ./rootfs/
+
+# release 时删除此文件
+# sudo rm -f ./rootfs/usr/bin/qemu-aarch64-static
+
+# 创建 2G 空白文件
+dd if=/dev/zero of=./rootfs.img bs=1M count=2048 oflag=sync status=progress
+# 格式化为 ext4 分区
+mkfs.ext4 ./rootfs.img
+
+# 挂载镜像
+sudo mount rootfs.img /mnt/
+# 复制 rootfs 文件到镜像中
+sudo cp -rfp ./rootfs/* /mnt/
 
 # 卸载镜像
-sudo umount ~/rootfs/
+sudo umount /mnt/
 
 # 检查并修复文件系统
-e2fsck -p -f system.img
+e2fsck -p -f rootfs.img
 # 压缩镜像
-resize2fs -M system.img
+resize2fs -M rootfs.img
 ```
 
 ### 镜像制作
@@ -224,7 +237,7 @@ out/
 └── u-boot
     ├── idbloader.img
     ├── trust.img
-    └── uboot.img
+    └── u-boot.img
 
 # 生成 boot.img
 cd out && ../scripts/build-image.sh -t boot
@@ -397,9 +410,9 @@ DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    MaskRom
 rkdeveloptool rd 3
 ```
 
-3.  烧写固件
+3.  初始化 DRAM
 
-    烧写 u-boot 需要在 MaskRom 模式下进行，否则报错 “The device does not support this operation!”。
+    需要在 MaskRom 模式下才下载，否则报错 “The device does not support this operation!”。
 
 ```shell
 # 初始化 DRAM
@@ -458,6 +471,13 @@ miniterm /dev/ttyUSB0 1500000
 nmcli dev wifi connect "hotspot-name" password "password"
 ```
 
+### 镜像源
+
+```shell
+sudo cp -a /etc/apt/sources.list /etc/apt/sources.list.bak
+sudo sed -i "s@http://ports.ubuntu.com@http://mirrors.huaweicloud.com@g" /etc/apt/sources.list
+```
+
 ### 本地化
 
 ```shell
@@ -487,7 +507,7 @@ reset
 
 ---
 
-Q：使用 apt 更新软件包时出现如下警告：
+Q：使用 apt 安装软件包时出现如下警告：
 
 >   perl: warning: Setting locale failed.
 >   perl: warning: Please check that your locale settings:
