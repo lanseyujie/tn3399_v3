@@ -1,0 +1,14 @@
+FIRMWARE_VER: 7.1.0
+MACHINE_MODEL: RK3399
+MACHINE_ID: 007
+MANUFACTURER: RK3399
+MAGIC: 0x5041524B
+ATAG: 0x00200800
+MACHINE: 3399
+CHECK_MASK: 0x80
+PWR_HLD: 0,0,A,0,1
+#KERNEL_IMG: 0x00280000
+#FDT_NAME: rk-kernel.dtb
+#RECOVER_KEY: 1,1,0,20,0
+#in section; per section 512(0x200) bytes
+CMDLINE: console=ttyFIQ0 androidboot.baseband=N/A androidboot.selinux=permissive androidboot.hardware=rk30board androidboot.console=ttyFIQ0 init=/init mtdparts=rk29xxnand:0x00002000@0x00002000(uboot),0x00002000@0x00004000(trust),0x00002000@0x00006000(misc),0x00008000@0x00008000(resource),0x0000c000@0x00010000(kernel),0x00010000@0x0001c000(boot),0x00010000@0x0002c000(recovery),0x00038000@0x0003c000(backup),0x00040000@0x00074000(cache),0x00300000@0x000b4000(system),0x00008000@0x003b4000(metadata),0x00000040@0x003bc000(verity_mode),0x00002000@0x003bc040(baseparamer),0x00000400@0x003be040(frp),-@0x003be440(userdata)
