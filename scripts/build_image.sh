@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# build-image.sh is only for tn3399_v3 dev board
+# build_image.sh is only for tn3399_v3 dev board
 # see https://github.com/lanseyujie/tn3399_v3.git
 # Wildlife <admin@lanseyujie.com>
 # 2020.06.20
@@ -27,17 +27,20 @@ SCRIPTS_PATH=$(
     pwd
 )
 PROJECT_PATH=$(dirname "$SCRIPTS_PATH")
-OUTPUT_PATH=$PROJECT_PATH/out
 PWD_PATH=$(pwd)
+OUTPUT_PATH=$PROJECT_PATH/out
+ROOTFS_PATH=$OUTPUT_PATH/rootfs
 
 TARGET=$1
-ROOTFS_PATH=$PWD_PATH/$2
+
 
 # 构建完整镜像所必须的文件
 # $OUTPUT_PATH
 # ├── kernel
 # │   ├── Image
 # │   └── tn3399-linux.dtb
+# ├── rootfs
+# │   └── ...
 # └── u-boot
 #     ├── idbloader.img
 #     ├── trust.img
@@ -98,7 +101,7 @@ build_rootfs() {
     rm -f "$ROOTFS_IMAGE"
 
     if [ ! -d "$ROOTFS_PATH" ]; then
-        echo "BUILD FAILED: ROOTFS PATH NOT SET"
+        echo "BUILD FAILED: ROOTFS PATH NOT EXIST"
         exit 1
     fi
 
@@ -195,7 +198,6 @@ elif [ "$TARGET" == "system" ]; then
 else
     echo
     echo "usage:"
-    echo "build_image.sh <trust | boot | system>"
-    echo "build_image.sh <rootfs> <rootfs-relative-path>"
+    echo "build_image.sh <trust | boot | rootfs | system>"
     echo
 fi

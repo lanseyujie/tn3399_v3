@@ -180,32 +180,19 @@ arch/arm64/boot/Image
 ### rootfs
 
 ```shell
-mkdir ./rootfs/
-wget -c http://cdimage.ubuntu.com/ubuntu-base/releases/20.04/release/ubuntu-base-20.04-base-arm64.tar.gz
-
-sudo apt install -y qemu-user-static
-
-# 解压并保留原始文件权限
-sudo tar -xpf ubuntu-base-20.04-base-arm64.tar.gz -C ./rootfs/
-
-# 模拟 aarch64 环境
-sudo cp /usr/bin/qemu-aarch64-static ./rootfs/usr/bin/
-# 配置同本机一样的 DNS 用于之后的联网更新
-sudo cp -b /etc/resolv.conf ./rootfs/etc/resolv.conf
-# 内核模块、驱动固件移植
+# 下载并解压 ubuntu-base
+./scripts/build_rootfs.sh init
 
 # 挂载相关路径并 chroot
-./scripts/rootfs.sh -m ./rootfs/
+./scripts/build_rootfs.sh mount
 # 自定义修改命令在此执行
-# 修改镜像源、安装 init 等必要的软件包、映射 ttyS2 Console 等
-exit
-./scripts/rootfs.sh -u ./rootfs/
+# 如内核模块、驱动固件移植、修改镜像源、安装 init 等必要的软件包、映射 ttyS2 Console 等
 
-# release 时删除此文件
-# sudo rm -f ./rootfs/usr/bin/qemu-aarch64-static
+# 退出 chroot 并卸载相关路径
+exit
 
 # 构建 rootfs 镜像
-./scripts/build_image.sh rootfs ./rootfs/
+./scripts/build_image.sh rootfs
 ```
 
 ### 镜像制作
@@ -233,7 +220,7 @@ mkdir -p ./out/{kernel,u-boot}
 ./scripts/build_image.sh boot
 
 # 生成 rootfs.img
-./scripts/build_image.sh rootfs ./out/rootfs/
+./scripts/build_image.sh rootfs
 
 # 生成 system.img
 ./scripts/build_image.sh system
