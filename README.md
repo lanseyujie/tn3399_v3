@@ -184,7 +184,7 @@ arch/arm64/boot/Image
 ./scripts/build_rootfs.sh init
 
 # 挂载相关路径并 chroot
-./scripts/build_rootfs.sh mount
+./scripts/build_rootfs.sh chroot
 # 自定义修改命令在此执行
 # 如内核模块、驱动固件移植、修改镜像源、安装 init 等必要的软件包、映射 ttyS2 Console 等
 

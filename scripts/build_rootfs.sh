@@ -27,7 +27,7 @@ init_rootfs() {
     fi
 
     # 解压并保留原始文件权限
-    echo "ROOTFS: Decompressing..."
+    echo "ROOTFS: DECOMPRESSING..."
     tar -xpf ubuntu-base-20.04-base-arm64.tar.gz -C "$ROOTFS_PATH"
 
     # 模拟 aarch64 环境
@@ -40,8 +40,8 @@ init_rootfs() {
     echo "ROOTFS: INITED"
 }
 
-mount_rootfs() {
-    echo "ROOTFS: MOUNTING..."
+chroot_rootfs() {
+    custom_before
 
     # 挂载路径
     mount -t proc /proc "$ROOTFS_PATH"/proc
@@ -52,19 +52,21 @@ mount_rootfs() {
     chroot "$ROOTFS_PATH"
 
     # 卸载路径
-    umount_rootfs
-}
-
-umount_rootfs() {
     umount "$ROOTFS_PATH"/proc
     umount "$ROOTFS_PATH"/sys
     umount "$ROOTFS_PATH"/dev/pts
     umount "$ROOTFS_PATH"/dev
 
     echo "ROOTFS: UNMOUNTED"
+
+    custom_after
 }
 
-custom_rootfs() {
+custom_before() {
+    echo "todo://"
+}
+
+custom_after() {
     echo "todo://"
 }
 
@@ -75,14 +77,12 @@ fi
 
 if [ "$TARGET" == "init" ] || [ "$TARGET" == "i" ]; then
     init_rootfs
-elif [ "$TARGET" == "mount" ] || [ "$TARGET" == "m" ]; then
-    mount_rootfs
-elif [ "$TARGET" == "umount" ] || [ "$TARGET" == "u" ]; then
-    umount_rootfs
+elif [ "$TARGET" == "chroot" ] || [ "$TARGET" == "c" ]; then
+    chroot_rootfs
 else
     echo
     echo "usage:"
-    echo "build_rootfs.sh <init | mount | umount>"
-    echo "build_rootfs.sh <i | m | u>"
+    echo "build_rootfs.sh <init | i>"
+    echo "build_rootfs.sh <chroot | c>"
     echo
 fi
