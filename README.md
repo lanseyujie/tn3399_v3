@@ -205,7 +205,7 @@ exit
 # sudo rm -f ./rootfs/usr/bin/qemu-aarch64-static
 
 # 构建 rootfs 镜像
-./scripts/build-image.sh rootfs ./rootfs/
+./scripts/build_image.sh rootfs ./rootfs/
 ```
 
 ### 镜像制作
@@ -219,22 +219,24 @@ mkdir -p ./out/{kernel,u-boot}
 ├── kernel
 │   ├── Image
 │   └── tn3399-linux.dtb
+├── rootfs
+│   └── ...
 └── u-boot
     ├── idbloader.img
     ├── trust.img
     └── u-boot.img
 
+# 生成 trust.img
+./scripts/build_image.sh trust
+
 # 生成 boot.img
-cd ./out/ && ../scripts/build-image.sh boot
-# boot.img 内的目录结构
-boot.img
-├── extlinux
-│   └── extlinux.conf
-├── Image
-└── tn3399-linux.dtb
+./scripts/build_image.sh boot
+
+# 生成 rootfs.img
+./scripts/build_image.sh rootfs ./out/rootfs/
 
 # 生成 system.img
-cd ./out/ && ../scripts/build-image.sh system
+./scripts/build_image.sh system
 ```
 
 #### 修改
