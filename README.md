@@ -262,6 +262,7 @@ sudo losetup -D
 
 ```shell
 # 查看 cmdline
+# 将 cmdline 记录在 parameter_gpt.txt 中
 adb shell
 su
 cat /proc/cmdline
@@ -272,76 +273,17 @@ cat /proc/cmdline
 rkdeveloptool ppt
 
 # 备份分区
-./rkbin/tools/upgrade_tool rl 0x00002000 0x00002000 uboot.img
-./rkbin/tools/upgrade_tool rl 0x00004000 0x00002000 trust.img
-./rkbin/tools/upgrade_tool rl 0x00006000 0x00002000 misc.img
-./rkbin/tools/upgrade_tool rl 0x00008000 0x00008000 resource.img
-./rkbin/tools/upgrade_tool rl 0x00010000 0x0000c000 kernel.img
-./rkbin/tools/upgrade_tool rl 0x0001c000 0x00010000 boot.img
-./rkbin/tools/upgrade_tool rl 0x0002c000 0x00010000 recovery.img
-./rkbin/tools/upgrade_tool rl 0x0003c000 0x00038000 backup.img
-./rkbin/tools/upgrade_tool rl 0x00074000 0x00040000 cache.img
-./rkbin/tools/upgrade_tool rl 0x000b4000 0x00300000 system.img
-./rkbin/tools/upgrade_tool rl 0x003b4000 0x00008000 metadata.img
-./rkbin/tools/upgrade_tool rl 0x003bc000 0x00000040 verity_mode.img
-./rkbin/tools/upgrade_tool rl 0x003bc040 0x00002000 baseparamer.img
-./rkbin/tools/upgrade_tool rl 0x003be040 0x00000400 frp.img
-./rkbin/tools/upgrade_tool rl 0x003be440 0x00300000 userdata.img
-# 或直接使用 rkdeveloptool 代替 upgrade_tool
+# 备份文件保存在 ./out/backup 路径下
+./scripts/factory_image.sh backup
 ```
 
 #### 恢复
 
 ```shell
-# 擦除 FLash
-./rkbin/tools/upgrade_tool ef ./rk3399_loader_v1.22.119.bin
-# 下载 Loader
-.rkbin/tools/upgrade_tool ul ./rk3399_loader_v1.22.119.bin
-# 下载分区表
-./rkbin/tools/upgrade_tool di -p parameter_gpt.txt
-# 下载镜像
-./rkbin/tools/upgrade_tool di -uboot uboot.img
-./rkbin/tools/upgrade_tool di -trust trust.img
-./rkbin/tools/upgrade_tool di -misc misc.img
-./rkbin/tools/upgrade_tool di -resource resource.img
-./rkbin/tools/upgrade_tool di -k kernel.img
-./rkbin/tools/upgrade_tool di -b boot.img
-./rkbin/tools/upgrade_tool di -recovery recovery.img
-./rkbin/tools/upgrade_tool di -backup backup.img
-./rkbin/tools/upgrade_tool di -cache cache.img
-./rkbin/tools/upgrade_tool di -s system.img
-./rkbin/tools/upgrade_tool di -metadata metadata.img
-./rkbin/tools/upgrade_tool di -verity_mode verity_mode.img
-./rkbin/tools/upgrade_tool di -baseparamer baseparamer.img
-./rkbin/tools/upgrade_tool di -frp frp.img
-./rkbin/tools/upgrade_tool di -userdata userdata.img
-
-# 或
-
-# 初始化 DRAM
-rkdeveloptool db ./rk3399_loader_v1.22.119.bin
-# 擦除 FLash
-rkdeveloptool ef
-# 下载 Loader
-rkdeveloptool ul ./rk3399_loader_v1.22.119.bin
-# 下载分区表
-rkdeveloptool gpt ./parameter_gpt.txt
-# 下载镜像
-rkdeveloptool wl 0x00002000 uboot.img
-rkdeveloptool wl 0x00004000 trust.img
-rkdeveloptool wl 0x00006000 misc.img
-rkdeveloptool wl 0x00008000 resource.img
-rkdeveloptool wl 0x00010000 kernel.img
-rkdeveloptool wl 0x0001c000 boot.img
-rkdeveloptool wl 0x0002c000 recovery.img
-rkdeveloptool wl 0x0003c000 backup.img
-rkdeveloptool wl 0x00074000 cache.img
-rkdeveloptool wl 0x000b4000 system.img
-rkdeveloptool wl 0x003b4000 metadata.img
-rkdeveloptool wl 0x003bc000 verity_mode.img
-rkdeveloptool wl 0x003bc040 baseparamer.img
-rkdeveloptool wl 0x003be040 frp.img
-rkdeveloptool wl 0x003be440 userdata.img
+# 恢复分区
+# 从 ./out/backup 路径读取备份进行恢复
+# 警告：尚未完成测试
+./scripts/factory_image.sh restore ./rk3399_loader_v1.22.119.bin
 ```
 
 ### 固件烧写
