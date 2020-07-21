@@ -4,7 +4,7 @@
 
 |   部件名称    |       芯片型号       |                           备注说明                           |
 | :-----------: | :------------------: | :----------------------------------------------------------: |
-|      CPU      |        rk3399        | Dual-core Cortex-A72 up to 1.8GHz;Quad-core Cortex-A53 up to 1.4GHz;Mali-T864 GPU |
+|      CPU      |        RK3399        | Dual-core Cortex-A72 up to 1.8GHz;Quad-core Cortex-A53 up to 1.4GHz;Mali-T864 GPU |
 |      RAM      |       K4B8G16        |               Dual-channel DDR3 1GB;板载 4 颗                |
 |     Flash     | SanDisk SDINBDG4-16G |                           eMMC 5.1                           |
 |      PMU      |        RK808D        |                                                              |
@@ -183,13 +183,8 @@ arch/arm64/boot/Image
 # 下载并解压 ubuntu-base
 ./scripts/build_rootfs.sh init
 
-# 挂载相关路径并 chroot
-./scripts/build_rootfs.sh chroot
-# 自定义修改命令在此执行
-# 如内核模块、驱动固件移植、修改镜像源、安装 init 等必要的软件包、映射 ttyS2 Console 等
-
-# 退出 chroot 并卸载相关路径
-exit
+# 使用 custom_rootfs.sh 定制 rootfs
+./scripts/build_rootfs.sh custom
 
 # 构建 rootfs 镜像
 ./scripts/build_image.sh rootfs
