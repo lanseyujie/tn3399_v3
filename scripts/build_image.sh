@@ -98,6 +98,11 @@ EOF
 }
 
 build_rootfs() {
+    if [ "$(id -u)" -ne 0 ]; then
+        echo "THIS OPERATION MUST BE RUN AS ROOT"
+        exit 1
+    fi
+
     rm -f "$ROOTFS_IMAGE"
 
     if [ ! -d "$ROOTFS_PATH" ]; then
@@ -110,12 +115,10 @@ build_rootfs() {
     # 格式化为 ext4 分区
     mkfs.ext4 "$ROOTFS_IMAGE"
 
-    tmp=$(mktemp -d)
-    sudo mount "$ROOTFS_IMAGE" "$tmp"
-    # 复制 rootfs 文件到镜像中
-    sudo cp -rfp "$ROOTFS_PATH"/* "$tmp"
-    sudo umount "$tmp"
-    rm -r "$tmp"
+    # 复制 rootfs 文件到镜像
+    mount "$ROOTFS_IMAGE" /mnt
+    cp -rfp "$ROOTFS_PATH"/* /mnt
+    umount /mnt
 
     # 检查并修复文件系统
     e2fsck -p -f "$ROOTFS_IMAGE"
