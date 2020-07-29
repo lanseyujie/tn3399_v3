@@ -27,9 +27,10 @@ SCRIPTS_PATH=$(
     pwd
 )
 PROJECT_PATH=$(dirname "$SCRIPTS_PATH")
-PWD_PATH=$(pwd)
 OUTPUT_PATH=$PROJECT_PATH/out
 ROOTFS_PATH=$OUTPUT_PATH/rootfs
+
+PWD_PATH=$(pwd)
 
 TARGET=$1
 
@@ -59,15 +60,11 @@ ROOTFS_IMAGE=$OUTPUT_PATH/rootfs.img
 # system
 SYSTEM_IMAGE=$OUTPUT_PATH/system.img
 
-build_trust() {
-    echo "todo://"
-}
-
 build_boot() {
     rm -f "$BOOT_IMAGE"
 
-    if [ ! -s "$BOOT_IMAGE" ]; then
-        echo "BUILD FAILED: MISSING BOOT FILES"
+    if [ ! -s "$KERNEL_IMAGE" ]; then
+        echo "BUILD FAILED: MISSING KERNEL IMAGE"
         exit 1
     fi
 
@@ -190,9 +187,7 @@ EOF
     echo "BUILD SUCCEED: $SYSTEM_IMAGE"
 }
 
-if [ "$TARGET" == "trust" ]; then
-    build_trust
-elif [ "$TARGET" == "boot" ]; then
+if [ "$TARGET" == "boot" ]; then
     build_boot
 elif [ "$TARGET" == "rootfs" ]; then
     build_rootfs
@@ -201,6 +196,6 @@ elif [ "$TARGET" == "system" ]; then
 else
     echo
     echo "usage:"
-    echo "build_image.sh <trust | boot | rootfs | system>"
+    echo "build_image.sh <boot | rootfs | system>"
     echo
 fi

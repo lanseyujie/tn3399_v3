@@ -26,23 +26,28 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 EOF
 
+ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+# 无交互式执行命令
 export DEBIAN_FRONTEND=noninteractive
 
 # 修改镜像源并更新软件包
 cp -a /etc/apt/sources.list /etc/apt/sources.list.bak
 sed -i "s@http://ports.ubuntu.com@http://mirrors.huaweicloud.com@g" /etc/apt/sources.list
 
-#unminimize <<EOF
-#Y
-#EOF
+unminimize <<EOF
+Y
+EOF
 
+# 软件包
 apt update && apt dist-upgrade -y && apt install -y \
     apt-utils dialog \
     language-pack-en language-pack-zh-hans \
     tzdata sudo bash-completion \
-    init ssh udev kmod pciutils usbutils lshw \
+    init ssh udev kmod pciutils usbutils alsa-utils lshw \
     iproute2 iputils-ping network-manager iw wireless-tools \
-    htop nano vim unar wget curl axel
+    htop nano vim unar wget curl axel \
+    linux-firmware
 
 # 修改默认密码
 echo "root:1234" | chpasswd
@@ -50,10 +55,9 @@ echo "root:1234" | chpasswd
 chage -d 0 root
 
 # ttyS2
-cp /lib/systemd/system/serial-getty\@.service /lib/systemd/system/serial-getty\@ttyS2.service
-sed -i 's/dev-%i.device/dev-%i/g' /lib/systemd/system/serial-getty\@ttyS2.service
-ln -s /lib/systemd/system/serial-getty\@ttyS2.service /etc/systemd/system/getty.target.wants/
+ln -s /lib/systemd/system/serial-getty\@.service /etc/systemd/system/getty.target.wants/serial-getty@ttyS2.service
 
 # 清理缓存
 apt clean
 rm -rf /var/lib/apt/lists/*
+rm -f ~/.bash_history
