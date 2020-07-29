@@ -17,6 +17,10 @@
 | HDMI 2.0+LVDS |  358775G + ALC5640   |                                                              |
 |   Audio PA    |        NS4258        |                            5W x 2                            |
 
+## 启动流程[^1]
+
+![启动流程](assets/rockchip_bootflow.png)
+
 ## 固件编译
 
 ### 编译环境
@@ -84,9 +88,13 @@ dtc -I dts -O dtb -o tn3399-linux.dtb tn3399-linux.dts
 
 #### 编译
 
-##### 原版 u-boot[^1][^2]
+##### 原版 u-boot[^2][^3]
 
 ```shell
+# 用于合并 trust 的工具集
+git clone https://github.com/rockchip-linux/rkbin.git
+
+# ATF
 git clone https://github.com/ARM-software/arm-trusted-firmware.git
 cd arm-trusted-firmware
 
@@ -110,9 +118,15 @@ make CROSS_COMPILE=aarch64-linux-gnu-
 # 得到 idbloader.img 和 u-boot.itb
 # idbloader.img 是 TPL 和 SPL 的合成文件，前者负责 DDR 初始化，后者负责加载 ATF 和 u-boot
 # u-boot.itb 是由 u-boot 和 ATF 合成的 FIT 格式的镜像文件
+
+# 重命名以在打包脚本中使用
+mv u-boot.itb u-boot.img
+
+# 合成 trust.img 文件
+cd ../rkbin/ && ./tools/trust_merger ./RKTRUST/RK3399TRUST.ini
 ```
 
-##### RockChip 维护的 u-boot[^3]
+##### RockChip 维护的 u-boot[^4]
 
 ```shell
 # 用于合并 loader 的工具集
@@ -122,7 +136,7 @@ apt install -y bison flex python3 device-tree-compiler bc
 git clone -b stable-4.4-rk3399-linux https://github.com/rockchip-linux/u-boot.git
 cd u-boot
 
-# 不使用项目指定工具链
+# 不使用项目指定的工具链
 sed -i 's@TOOLCHAIN_ARM32=.*@TOOLCHAIN_ARM32=/@g' ./make.sh
 sed -i 's@TOOLCHAIN_ARM64=.*@TOOLCHAIN_ARM64=/@g' ./make.sh
 sed -i 's@${absolute_path}/bin/@@g' ./make.sh
@@ -130,9 +144,16 @@ sed -i 's@${absolute_path}/bin/@@g' ./make.sh
 # 编译修改过的 u-boot
 ./make.sh evb-rk3399
 # 得到如下文件
-rk3399_loader_v1.24.125.bin
+rk3399_loader_v1.24.126.bin
 trust.img
 uboot.img
+
+# 重命名以在打包脚本中使用
+mv uboot.img u-boot.img
+
+# 合成 idbloader.img 文件
+../rkbin/tools/mkimage -n rk3399 -T rksd -d ../rkbin/bin/rk33/rk3399_ddr_800MHz_v1.24.bin idbloader.img
+cat ../rkbin/bin/rk33/rk3399_miniloader_v1.26.bin >> idbloader.img
 
 # 也可以从此项目编译原版 u-boot
 ```
@@ -156,7 +177,14 @@ git fetch upstream
 # 切换内核版本
 git checkout linux-5.4.y
 
+# 防止版本号后出现 -dirty 等后缀
+touch .scmversion
+
 export ARCH=arm64
+export CROSS_COMPILE=aarch64-linux-gnu-
+
+# 修改设备树
+cat ../tn3399_v3/config/tn3399-linux.dts > ./arch/arm64/boot/dts/rockchip/rk3399-rock960.dts
 
 # 生成 .config 配置文件
 make defconfig
@@ -165,13 +193,13 @@ make menuconfig
 make savedefconfig
 
 # 编译 kernel
-make CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc)
+make -j$(nproc)
 # 得到如下文件
 arch/arm64/boot/dts/rockchip/rk3399-rock960.dtb
 arch/arm64/boot/Image
 ```
 
-##### RockChip 维护的 kernel[^4]
+##### RockChip 维护的 kernel[^5]
 
 ```shell
 
@@ -207,9 +235,6 @@ mkdir -p ./out/{kernel,u-boot}
     ├── idbloader.img
     ├── trust.img
     └── u-boot.img
-
-# 生成 trust.img
-./scripts/build_image.sh trust
 
 # 生成 boot.img
 ./scripts/build_image.sh boot
@@ -251,7 +276,7 @@ sudo losetup -D
 
 ## 烧写调试
 
-### 出厂固件[^5]
+### 出厂固件[^6]
 
 #### 备份
 
@@ -432,12 +457,13 @@ A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
 ## 参考资料
 
-[^1]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034)
+[^1]: [Boot option - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Boot_option)
 
-[^2]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
+[^2]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034)
 
-[^3]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
+[^3]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
 
-[^4]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
+[^4]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
+[^5]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
+[^6]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool)
 
-[^5]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool)

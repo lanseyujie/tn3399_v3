@@ -55,7 +55,7 @@ umount_rootfs() {
 custom_before() {
     # 内核模块
     # cd $(dirname "$PROJECT_PATH")/linux && make modules_install INSTALL_MOD_PATH="$ROOTFS_PATH"
-    # cd $(dirname "$PROJECT_PATH")/linux && make modules_install ARCG=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) INSTALL_MOD_PATH="$ROOTFS_PATH"
+    # cd $(dirname "$PROJECT_PATH")/linux && make modules_install ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) INSTALL_MOD_PATH="$ROOTFS_PATH"
 
     # 模拟 aarch64 环境
     apt install -y qemu-user-static
