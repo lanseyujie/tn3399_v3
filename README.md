@@ -91,9 +91,6 @@ dtc -I dts -O dtb -o tn3399-linux.dtb tn3399-linux.dts
 ##### 原版 u-boot[^2][^3]
 
 ```shell
-# 用于合并 trust 的工具集
-git clone https://github.com/rockchip-linux/rkbin.git
-
 # ATF
 git clone https://github.com/ARM-software/arm-trusted-firmware.git
 cd arm-trusted-firmware
@@ -118,12 +115,6 @@ make CROSS_COMPILE=aarch64-linux-gnu-
 # 得到 idbloader.img 和 u-boot.itb
 # idbloader.img 是 TPL 和 SPL 的合成文件，前者负责 DDR 初始化，后者负责加载 ATF 和 u-boot
 # u-boot.itb 是由 u-boot 和 ATF 合成的 FIT 格式的镜像文件
-
-# 重命名以在打包脚本中使用
-mv u-boot.itb u-boot.img
-
-# 合成 trust.img 文件
-cd ../rkbin/ && ./tools/trust_merger ./RKTRUST/RK3399TRUST.ini
 ```
 
 ##### RockChip 维护的 u-boot[^4]
@@ -148,9 +139,6 @@ rk3399_loader_v1.24.126.bin
 trust.img
 uboot.img
 
-# 重命名以在打包脚本中使用
-mv uboot.img u-boot.img
-
 # 合成 idbloader.img 文件
 ../rkbin/tools/mkimage -n rk3399 -T rksd -d ../rkbin/bin/rk33/rk3399_ddr_800MHz_v1.24.bin idbloader.img
 cat ../rkbin/bin/rk33/rk3399_miniloader_v1.26.bin >> idbloader.img
@@ -160,9 +148,9 @@ cat ../rkbin/bin/rk33/rk3399_miniloader_v1.26.bin >> idbloader.img
 
 ### kernel
 
-##### 原版 kernel
+#### 原版 kernel
 
->   此仓库巨大，.git 约占用 3 GB，编译后约占用 8 GB，请至少留有 10 GB 硬盘空间，编译大约需要 40 分钟。
+> 此仓库约占用 3 GB，编译后约占用 8 GB，请至少留有 10 GB 硬盘空间，编译大约需要 40 分钟。
 
 ```shell
 apt install -y libssl-dev lzop kmod
@@ -199,10 +187,10 @@ arch/arm64/boot/dts/rockchip/rk3399-rock960.dtb
 arch/arm64/boot/Image
 ```
 
-##### RockChip 维护的 kernel[^5]
+#### RockChip 维护的 kernel[^5]
 
 ```shell
-
+# TODO
 ```
 
 ### rootfs
@@ -233,8 +221,8 @@ mkdir -p ./out/{kernel,u-boot}
 │   └── ...
 └── u-boot
     ├── idbloader.img
-    ├── trust.img
-    └── u-boot.img
+    ├── trust.img (仅使用 uboot.img 时使用，详见启动流程一节)
+    └── u-boot.img / u-boot.itb
 
 # 生成 boot.img
 ./scripts/build_image.sh boot
@@ -310,63 +298,63 @@ rkdeveloptool ppt
 
 #### eMMC
 
->   相关工具：https://github.com/rockchip-linux/rkbin
+> 相关工具：https://github.com/rockchip-linux/rkbin
 
-1.  创建 udev 规则
+1. 创建 udev 规则
 
     可以避免无 sudo 权限时不能发送指令或烧写报错 “Creating Comm Object failed!”。
 
-```shell
-echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0660", GROUP="plugdev"' | sudo tee -a /etc/udev/rules.d/51-android.rules
-```
+    ```shell
+    echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2207", MODE="0660", GROUP="plugdev"' | sudo tee -a /etc/udev/rules.d/51-android.rules
+    ```
 
-2.  进入烧写模式
+2. 进入烧写模式
 
     连接 Micro-USB，长按 RECOVER 键并上电，如果为 Android 系统此时应为 Loader 模式，其他系统可能为 MaskRom 模式。
 
-```shell
-# 查看连接的设备
-./rkbin/tools/upgrade_tool ld
-# 或使用 rkdeveloptool
-# 因 ./rkbin/tools/rkdeveloptool 这个不支持 ld 命令故需要重新编译 rkdeveloptool
-git clone https://github.com/rockchip-linux/rkdeveloptool.git
-sudo apt install -y libudev-dev libusb-dev dh-autoreconf libglib2.0-dev
-cd rkdeveloptool && autoreconf -i && ./configure && make
-sudo mv rkdeveloptool /usr/local/bin/
-rkdeveloptool ld
+    ```shell
+    # 查看连接的设备
+    ./rkbin/tools/upgrade_tool ld
+    # 或使用 rkdeveloptool
+    # 因 ./rkbin/tools/rkdeveloptool 这个不支持 ld 命令故需要重新编译 rkdeveloptool
+    git clone https://github.com/rockchip-linux/rkdeveloptool.git
+    sudo apt install -y libudev-dev libusb-dev dh-autoreconf libglib2.0-dev
+    cd rkdeveloptool && autoreconf -i && ./configure && make
+    sudo mv rkdeveloptool /usr/local/bin/
+    rkdeveloptool ld
 
-# 应会有如下设备信息
-DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    Loader
-# 或
-DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    MaskRom
+    # 应会有如下设备信息
+    DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    Loader
+    # 或
+    DevNo=1 Vid=0x2207,Pid=0x330c,LocationID=301    MaskRom
 
-# Loader 模式进入 MaskRom 模式方法
-./rkbin/tools/upgrade_tool rd 3
-# 或
-rkdeveloptool rd 3
-```
+    # Loader 模式进入 MaskRom 模式方法
+    ./rkbin/tools/upgrade_tool rd 3
+    # 或
+    rkdeveloptool rd 3
+    ```
 
-3.  初始化 DRAM
+3. 初始化 DRAM
 
     需要在 MaskRom 模式下才下载，否则报错 “The device does not support this operation!”。
 
-```shell
-# 初始化 DRAM
-./rkbin/tools/upgrade_tool db ./rk3399_loader_v1.22.119.bin
-# 或
-rkdeveloptool db ./rk3399_loader_v1.22.119.bin
+    ```shell
+    # 初始化 DRAM
+    ./rkbin/tools/upgrade_tool db ./rk3399_loader_v1.22.119.bin
+    # 或
+    rkdeveloptool db ./rk3399_loader_v1.22.119.bin
 
-# 下载镜像
-./rkbin/tools/upgrade_tool wl 0x0 ./system.img
-# 或
-rkdeveloptool wl 0x0 ./system.img
-```
+    # 下载镜像
+    ./rkbin/tools/upgrade_tool wl 0x0 ./system.img
+    # 或
+    rkdeveloptool wl 0x0 ./system.img
+    ```
 
 #### SDCard
 
->   也可以使用图形化烧写工具 balena-etcher-electron
+> 也可以使用图形化烧写工具 balena-etcher-electron
 >
->   https://github.com/balena-io/etcher/releases
+> https://github.com/balena-io/etcher/releases
 
 ```shell
 # sdX 为 sdcard 对应的块设备文件
@@ -381,7 +369,7 @@ sudo dd if=system.img of=/dev/sdX bs=4M oflag=sync status=progress
 
 #### 通信软件
 
->   也可以使用 minicom 、putty、SecureCRT 等工具。
+> 也可以使用 minicom 、putty、SecureCRT 等工具。
 
 ```shell
 # 解决串口权限问题
@@ -405,6 +393,7 @@ miniterm /dev/ttyUSB0 1500000
 ```shell
 # WiFi 配置
 nmcli dev wifi connect "hotspot-name" password "password"
+# 或使用 nmtui 命令图形化修改
 ```
 
 ### 镜像源
@@ -445,13 +434,13 @@ reset
 
 Q：使用 apt 安装软件包时出现如下警告：
 
->   perl: warning: Setting locale failed.
->   perl: warning: Please check that your locale settings:
->          LANGUAGE = (unset),
->          LC_ALL = (unset),
->          LANG = "zh_CN.UTF-8"
->      are supported and installed on your system.
->   perl: warning: Falling back to the standard locale ("C").
+> perl: warning: Setting locale failed.
+> perl: warning: Please check that your locale settings:
+>        LANGUAGE = (unset),
+>        LC_ALL = (unset),
+>        LANG = "zh_CN.UTF-8"
+>    are supported and installed on your system.
+> perl: warning: Falling back to the standard locale ("C").
 
 A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
@@ -464,6 +453,7 @@ A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 [^3]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
 
 [^4]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
-[^5]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
-[^6]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool)
 
+[^5]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
+
+[^6]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool)

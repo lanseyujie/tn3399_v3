@@ -34,7 +34,6 @@ PWD_PATH=$(pwd)
 
 TARGET=$1
 
-
 # 构建完整镜像所必须的文件
 # $OUTPUT_PATH
 # ├── kernel
@@ -44,12 +43,13 @@ TARGET=$1
 # │   └── ...
 # └── u-boot
 #     ├── idbloader.img
-#     ├── trust.img
-#     └── u-boot.img
+#     ├── trust.img (仅使用 uboot.img 时使用，详见启动流程一节)
+#     └── uboot.img / u-boot.itb
 
 # u-boot
 IDBLOADER_IMGAGE=$OUTPUT_PATH/u-boot/idbloader.img
-UBOOT_IMGAGE=$OUTPUT_PATH/u-boot/u-boot.img
+UBOOT_IMGAGE=$OUTPUT_PATH/u-boot/uboot.img
+UBOOT_ITB=$OUTPUT_PATH/u-boot/u-boot.itb
 TRUSRT_IMGAGE=$OUTPUT_PATH/u-boot/trust.img
 # boot
 DTB_FILE=$OUTPUT_PATH/kernel/tn3399-linux.dtb
@@ -64,7 +64,7 @@ build_boot() {
     rm -f "$BOOT_IMAGE"
 
     if [ ! -s "$KERNEL_IMAGE" ]; then
-        echo "BUILD FAILED: MISSING KERNEL IMAGE"
+        echo "BUILD FAILED: MISSING $KERNEL_IMAGE"
         exit 1
     fi
 
@@ -107,7 +107,7 @@ build_rootfs() {
         exit 1
     fi
 
-    # 创建 2G 空白文件
+    # 创建 2G 空白文件，具体所需大小根据 sudo du -h --max-depth=0 "$ROOTFS_PATH" 调整
     dd if=/dev/zero of="$ROOTFS_IMAGE" bs=1M count=2048 oflag=sync status=progress
     # 格式化为 ext4 分区
     mkfs.ext4 "$ROOTFS_IMAGE"
@@ -128,18 +128,26 @@ build_rootfs() {
 build_system() {
     rm -f "$SYSTEM_IMAGE"
 
-    if [ ! -s "$IDBLOADER_IMGAGE" ] || [ ! -s "$UBOOT_IMGAGE" ] && [ ! -s "$TRUSRT_IMGAGE" ]; then
-        echo "BUILD FAILED: MISSING U-BOOT IMAGE"
+    if [ ! -s "$IDBLOADER_IMGAGE" ]; then
+        echo "BUILD FAILED: MISSING $IDBLOADER_IMGAGE"
+        exit 1
+    fi
+
+    if [ -s "$UBOOT_IMGAGE" ] && [ ! -s "$TRUSRT_IMGAGE" ]; then
+        echo "BUILD FAILED: MISSING $TRUSRT_IMGAGE"
+        exit 1
+    elif [ ! -s "$UBOOT_ITB" ]; then
+        echo "BUILD FAILED: MISSING $UBOOT_ITB"
         exit 1
     fi
 
     if [ ! -s "$BOOT_IMAGE" ]; then
-        echo "BUILD FAILED: MISSING BOOT IMAGE"
+        echo "BUILD FAILED: MISSING $BOOT_IMAGE"
         exit 1
     fi
 
     if [ ! -s "$ROOTFS_IMAGE" ]; then
-        echo "BUILD FAILED: MISSING ROOTFS IMAGE"
+        echo "BUILD FAILED: MISSING $ROOTFS_IMAGE"
         exit 1
     fi
 
@@ -175,8 +183,15 @@ EOF
 
     # 烧写 u-boot
     dd if="$IDBLOADER_IMGAGE" of="$SYSTEM_IMAGE" seek=$LOADER1_START conv=notrunc
-    dd if="$UBOOT_IMGAGE" of="$SYSTEM_IMAGE" seek=$LOADER2_START conv=notrunc
-    dd if="$TRUSRT_IMGAGE" of="$SYSTEM_IMAGE" seek=$TRUST_START conv=notrunc
+    if [ -s "$UBOOT_IMGAGE" ] && [ -s "$TRUSRT_IMGAGE" ]; then
+        dd if="$UBOOT_IMGAGE" of="$SYSTEM_IMAGE" seek=$LOADER2_START conv=notrunc
+        dd if="$TRUSRT_IMGAGE" of="$SYSTEM_IMAGE" seek=$TRUST_START conv=notrunc
+    elif [ -s "$UBOOT_ITB" ]; then
+        dd if="$UBOOT_ITB" of="$SYSTEM_IMAGE" seek=$LOADER2_START conv=notrunc
+    else
+        echo "BUILD FAILED: MISSING UBOOT IMAGE/ITB"
+        exit 1
+    fi
 
     # 烧写 boot
     dd if="$BOOT_IMAGE" of="$SYSTEM_IMAGE" seek=$BOOT_START conv=notrunc
