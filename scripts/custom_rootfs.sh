@@ -35,16 +35,21 @@ export DEBIAN_FRONTEND=noninteractive
 cp -a /etc/apt/sources.list /etc/apt/sources.list.bak
 sed -i "s@http://ports.ubuntu.com@http://mirrors.huaweicloud.com@g" /etc/apt/sources.list
 
-unminimize <<EOF
-Y
-EOF
-
-# 软件包
+# 基础软件包
 apt update && apt dist-upgrade -y && apt install -y \
     apt-utils dialog \
     language-pack-en language-pack-zh-hans \
-    tzdata sudo bash-completion \
-    init ssh udev kmod pciutils usbutils alsa-utils lshw \
+    tzdata bash-completion
+
+# 安装缺失的文档及翻译
+unminimize <<EOF
+Y
+
+EOF
+
+# 必要的软件包
+apt install -y \
+    init sudo ssh udev kmod pciutils usbutils alsa-utils lshw \
     iproute2 iputils-ping network-manager iw wireless-tools \
     htop nano vim unar wget curl axel \
     linux-firmware
