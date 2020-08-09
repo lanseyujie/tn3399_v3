@@ -134,11 +134,10 @@ build_system() {
     fi
 
     if [ -s "$UBOOT_IMGAGE" ] && [ ! -s "$TRUSRT_IMGAGE" ]; then
-        echo "BUILD FAILED: MISSING $TRUSRT_IMGAGE"
-        exit 1
-    elif [ ! -s "$UBOOT_ITB" ]; then
-        echo "BUILD FAILED: MISSING $UBOOT_ITB"
-        exit 1
+        if [ ! -s "$UBOOT_ITB" ]; then
+            echo "BUILD FAILED: MISSING $UBOOT_ITB"
+            exit 1
+        fi
     fi
 
     if [ ! -s "$BOOT_IMAGE" ]; then
