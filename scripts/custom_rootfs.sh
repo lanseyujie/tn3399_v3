@@ -11,8 +11,13 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# 继续构建第二阶段
+debootstrap/debootstrap --second-stage
+
+# 修改主机名
 echo ubuntu >/etc/hostname
 
+# 修改 hosts
 cat >/etc/hosts <<EOF
 127.0.0.1       localhost
 127.0.1.1       ubuntu
@@ -26,33 +31,11 @@ ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 EOF
 
+# 修改时区
 ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
-# 无交互式执行命令
-export DEBIAN_FRONTEND=noninteractive
-
-# 修改镜像源并更新软件包
-cp -a /etc/apt/sources.list /etc/apt/sources.list.bak
-sed -i "s@http://ports.ubuntu.com@http://mirrors.huaweicloud.com@g" /etc/apt/sources.list
-
-# 基础软件包
-apt update && apt dist-upgrade -y && apt install -y \
-    apt-utils dialog \
-    language-pack-en language-pack-zh-hans \
-    tzdata bash-completion
-
-# 安装缺失的文档及翻译
-unminimize <<EOF
-Y
-
-EOF
-
-# 必要的软件包
-apt install -y \
-    init sudo ssh udev kmod pciutils usbutils alsa-utils lshw \
-    iproute2 iputils-ping network-manager iw wireless-tools \
-    htop nano vim unar wget curl axel \
-    linux-firmware
+# 更新软件包
+apt update && apt dist-upgrade -y
 
 # 修改默认密码
 echo "root:1234" | chpasswd
