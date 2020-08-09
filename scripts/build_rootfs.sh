@@ -41,7 +41,7 @@ custom_rootfs() {
     # 安装构建工具
     apt install -y qemu-user-static debootstrap
     # 构建 rootfs
-    debootstrap --arch=arm64 --include=language-pack-en,language-pack-zh-hans,bash-completion,htop,nano,vim,curl,wget,axel,unar,network-manager,wireless-tools,iw,pciutils,usbutils,alsa-utils,lshw,ssh --components=main,restricted,multiverse,universe --foreign focal "$ROOTFS_PATH" http://repo.huaweicloud.com/ubuntu-ports/
+    debootstrap --arch=arm64 --include=language-pack-en,language-pack-zh-hans,bash-completion,htop,nano,vim,curl,wget,axel,unar,network-manager,wireless-tools,iw,bluez,bluez-tools,rfkill,pciutils,usbutils,alsa-utils,lshw,ssh --components=main,restricted,multiverse,universe --foreign focal "$ROOTFS_PATH" http://repo.huaweicloud.com/ubuntu-ports/
 
     cp /usr/bin/qemu-aarch64-static "$ROOTFS_PATH"/usr/bin/
     cp -rf "$OVERLAY_PATH"/* "$ROOTFS_PATH"/
