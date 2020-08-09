@@ -444,6 +444,63 @@ Q：使用 apt 安装软件包时出现如下警告：
 
 A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 
+---
+
+Q：以太网卡因未被 network-manager 托管不能启用。
+
+```shell
+# 网卡未启用
+ip addr show eth0
+2: eth0: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default qlen 1000
+    link/ether 16:a6:4c:50:54:44 brd ff:ff:ff:ff:ff:ff
+
+# 网卡未被 network-manager
+nmcli device
+DEVICE  TYPE      STATE      CONNECTION
+eth0    ethernet  unmanaged  --
+lo      loopback  unmanaged  --
+
+# 使用该命令启用网卡无效
+nmcli dev set eth0 managed yes
+```
+
+A：原因在于 network-manager 的默认配置 /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf 不会托管以太网卡[^7]。解决方法如下：
+
+```shell
+# 使用 netplan 配置以太网络
+sudo nano /etc/netplan/01-netcfg.yaml
+
+# 配置为动态获取 IP
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: yes
+
+# 或静态 IP
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+     dhcp4: no
+     addresses: [10.0.0.10/24]
+     gateway4: 10.0.0.1
+     nameservers:
+       addresses: [223.5.5.5,223.6.6.6]
+
+# 应用配置
+sudo netplan --debug apply
+```
+
+也可以使用 network-manager 托管所有网络设备，尽管官方不推荐这样做。
+
+```shell
+# 覆盖默认配置
+sudo touch /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
+```
+
 ## 参考资料
 
 [^1]: [Boot option - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Boot_option)
@@ -457,3 +514,6 @@ A：参考 系统配置-本地化 一节安装相应语言包即可解决。
 [^5]: [Rockchip Kernel - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rockchip_Kernel)
 
 [^6]: [Rkdeveloptool - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Rkdeveloptool)
+
+[^7]: [network-manager does not manage ethernet and bluetooth interfaces](https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1638842)
+
