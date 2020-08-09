@@ -19,21 +19,6 @@ ROOTFS_PATH=$OUTPUT_PATH/rootfs
 UBUNTU_VERSION=20.04
 TARGET=$1
 
-init_rootfs() {
-    rm -rf "$ROOTFS_PATH" && mkdir -p "$ROOTFS_PATH" && cd "$OUTPUT_PATH"
-
-    if [ ! -f "$OUTPUT_PATH/ubuntu-base-$UBUNTU_VERSION-base-arm64.tar.gz" ]; then
-        # 下载 ubuntu-base
-        wget -c "http://cdimage.ubuntu.com/ubuntu-base/releases/$UBUNTU_VERSION/release/ubuntu-base-$UBUNTU_VERSION-base-arm64.tar.gz"
-    fi
-
-    # 解压并保留原始文件权限
-    echo "ROOTFS: DECOMPRESSING..."
-    tar -xpf ubuntu-base-20.04-base-arm64.tar.gz -C "$ROOTFS_PATH"
-
-    echo "ROOTFS: INITED"
-}
-
 mount_rootfs() {
     mount -t proc /proc "$ROOTFS_PATH"/proc
     mount -t sysfs /sys "$ROOTFS_PATH"/sys
@@ -52,24 +37,14 @@ umount_rootfs() {
     echo "ROOTFS: UNMOUNTED"
 }
 
-custom_before() {
-    # 内核模块
-    # cd $(dirname "$PROJECT_PATH")/linux && make modules_install INSTALL_MOD_PATH="$ROOTFS_PATH"
-    # cd $(dirname "$PROJECT_PATH")/linux && make modules_install ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) INSTALL_MOD_PATH="$ROOTFS_PATH"
-
-    # 模拟 aarch64 环境
-    apt install -y qemu-user-static
-    cp /usr/bin/qemu-aarch64-static "$ROOTFS_PATH"/usr/bin/
-
-    # 配置同本机一样的 DNS 用于之后的联网更新
-    cp -b /etc/resolv.conf "$ROOTFS_PATH"/etc/resolv.conf
-
-    cp -rf "$OVERLAY_PATH"/* "$ROOTFS_PATH"/
-}
-
 custom_rootfs() {
-    # 准备工作
-    custom_before
+    # 安装构建工具
+    apt install -y qemu-user-static debootstrap
+    # 构建 rootfs
+    debootstrap --arch=arm64 --include=language-pack-en,language-pack-zh-hans,bash-completion,htop,nano,vim,curl,wget,axel,unar,network-manager,wireless-tools,iw,pciutils,usbutils,alsa-utils,lshw,ssh --components=main,restricted,multiverse,universe --foreign focal "$ROOTFS_PATH" http://repo.huaweicloud.com/ubuntu-ports/
+
+    cp /usr/bin/qemu-aarch64-static "$ROOTFS_PATH"/usr/bin/
+    cp -rf "$OVERLAY_PATH"/* "$ROOTFS_PATH"/
 
     # 挂载路径
     mount_rootfs
@@ -81,15 +56,17 @@ custom_rootfs() {
     # 执行自定义修改
     chroot <"$SCRIPTS_PATH"/custom_rootfs.sh "$ROOTFS_PATH"
 
+    # 安装内核模块
+    # cd $(dirname "$PROJECT_PATH")/linux && make modules_install INSTALL_MOD_PATH="$ROOTFS_PATH"
+    # cd $(dirname "$PROJECT_PATH")/linux && make modules_install ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- -j$(nproc) INSTALL_MOD_PATH="$ROOTFS_PATH"
+
     # 卸载路径
     umount_rootfs
 
     # 清理工作
-    custom_after
-}
-
-custom_after() {
     rm -f "$ROOTFS_PATH"/usr/bin/qemu-aarch64-static
+
+    echo "ROOTFS: BUILD SUCCEED"
 }
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -97,9 +74,7 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-if [ "$TARGET" == "init" ] || [ "$TARGET" == "i" ]; then
-    init_rootfs
-elif [ "$TARGET" == "custom" ] || [ "$TARGET" == "c" ]; then
+if [ "$TARGET" == "custom" ] || [ "$TARGET" == "c" ]; then
     custom_rootfs
 elif [ "$TARGET" == "mount" ] || [ "$TARGET" == "m" ]; then
     mount_rootfs
@@ -108,7 +83,6 @@ elif [ "$TARGET" == "umount" ] || [ "$TARGET" == "u" ]; then
 else
     echo
     echo "usage:"
-    echo "build_rootfs.sh <init | i>"
     echo "build_rootfs.sh <custom | c>"
     echo "build_rootfs.sh <mount | m>"
     echo "build_rootfs.sh <umount | u>"
