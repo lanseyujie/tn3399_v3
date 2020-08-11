@@ -5,17 +5,17 @@
 |   部件名称    |       芯片型号       |                           备注说明                           |
 | :-----------: | :------------------: | :----------------------------------------------------------: |
 |      CPU      |        RK3399        | Dual-core Cortex-A72 up to 1.8GHz;Quad-core Cortex-A53 up to 1.4GHz;Mali-T864 GPU |
-|      RAM      |       K4B8G16        |               Dual-channel DDR3 1GB;板载 4 颗                |
+|      RAM      |       K4B8G16        |                  Dual-channel DDR3 1GB * 4                   |
 |     Flash     | SanDisk SDINBDG4-16G |                           eMMC 5.1                           |
 |      PMU      |        RK808D        |                                                              |
 |   Ethernet    |       RTL8211E       |                      10/100/1000 Base-T                      |
 |    WIFI+BT    |        AP6255        |               WIFI IEEE802.11 a/b/g/n/ac;BT4.2               |
 |   SATA 3.0    |        JMS578        |                                                              |
-|    USB 2.0    |        FE1.1s        |              板载 TYPE A 插座 x 2;接插件插座x5               |
-|    USB 3.0    |       VL817-Q7       |                     板载 TYPE A 插座 x 2                     |
+|    USB 2.0    |        FE1.1s        |     TYPE A Mount Socket * 2 & 4-Pin Connector Socket * 5     |
+|    USB 3.0    |       VL817-Q7       |                   TYPE A Mount Socket * 2                    |
 |     UART      |      SP3232EEN       |                                                              |
 | HDMI 2.0+LVDS |  358775G + ALC5640   |                                                              |
-|   Audio PA    |        NS4258        |                            5W x 2                            |
+|   Audio PA    |        NS4258        |                            5W * 2                            |
 
 ## 启动流程[^1]
 
@@ -96,25 +96,36 @@ git clone https://github.com/ARM-software/arm-trusted-firmware.git
 cd arm-trusted-firmware
 
 # 编译 ATF
+unset BL31
 make CROSS_COMPILE=aarch64-linux-gnu- PLAT=rk3399
 # 得到 build/rk3399/release/bl31/bl31.elf
-
 export BL31=/data/arm-trusted-firmware/build/rk3399/release/bl31/bl31.elf
 
 apt install -y bison flex python3 device-tree-compiler bc
 git clone https://github.com/u-boot/u-boot.git
 cd u-boot
 
+# 修改设备树
+cat ../tn3399_v3/config/tn3399-linux.dts > ./arch/arm/dts/rk3399-rock960.dts
+
+# 清理工程
+make distclean
 # 生成 .config 配置文件
 make rock960-rk3399_defconfig
 # 或者自定义配置
 make menuconfig
 
 # 编译 u-boot
-make CROSS_COMPILE=aarch64-linux-gnu-
+export CROSS_COMPILE=aarch64-linux-gnu-
+make -j$(nproc)
 # 得到 idbloader.img 和 u-boot.itb
 # idbloader.img 是 TPL 和 SPL 的合成文件，前者负责 DDR 初始化，后者负责加载 ATF 和 u-boot
 # u-boot.itb 是由 u-boot 和 ATF 合成的 FIT 格式的镜像文件
+
+# 生成 rk3399_loader_v1.xx.xxx.bin
+git clone https://github.com/rockchip-linux/rkbin.git
+cd rkbin
+./tools/boot_merger ./RKBOOT/RK3399MINIALL.ini .
 ```
 
 ##### RockChip 维护的 u-boot[^4]
@@ -168,12 +179,11 @@ git checkout linux-5.4.y
 # 防止版本号后出现 -dirty 等后缀
 touch .scmversion
 
-export ARCH=arm64
-export CROSS_COMPILE=aarch64-linux-gnu-
-
 # 修改设备树
 cat ../tn3399_v3/config/tn3399-linux.dts > ./arch/arm64/boot/dts/rockchip/rk3399-rock960.dts
 
+# 清理工程
+make distclean
 # 生成 .config 配置文件
 make defconfig
 # 或者自定义配置
@@ -181,6 +191,8 @@ make menuconfig
 make savedefconfig
 
 # 编译 kernel
+export ARCH=arm64
+export CROSS_COMPILE=aarch64-linux-gnu-
 make -j$(nproc)
 # 得到如下文件
 arch/arm64/boot/dts/rockchip/rk3399-rock960.dtb
@@ -196,14 +208,8 @@ arch/arm64/boot/Image
 ### rootfs
 
 ```shell
-# 下载并解压 ubuntu-base
-./scripts/build_rootfs.sh init
-
 # 使用 custom_rootfs.sh 定制 rootfs
 ./scripts/build_rootfs.sh custom
-
-# 构建 rootfs 镜像
-./scripts/build_image.sh rootfs
 ```
 
 ### 镜像制作
@@ -501,12 +507,25 @@ sudo netplan --debug apply
 sudo touch /etc/NetworkManager/conf.d/10-globally-managed-devices.conf
 ```
 
+---
+
+Q：如何获取当前系统的设备树和内核编译选项？
+
+A：使用如下命令获取：
+
+```shell
+# 设备树
+cat /sys/firmware/fdt > raw.dtb
+
+# 内核编译选项
+zcat /proc/config.gz > kernel.config
+```
+
 ## 参考资料
 
 [^1]: [Boot option - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Boot_option)
 
 [^2]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034)
-
 [^3]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
 
 [^4]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
