@@ -31,8 +31,8 @@
 			    <&user_led4>, <&wlan_led>, <&bt_led>;
 
 		user_led1 {
-			label = "green:user1";
-			gpios = <&gpio4 RK_PC2 0>;
+			label = "sys_led";
+			gpios = <&gpio1 RK_PC2 0>;
 			linux,default-trigger = "heartbeat";
 		};
 
