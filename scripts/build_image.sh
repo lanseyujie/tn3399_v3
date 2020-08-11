@@ -110,7 +110,7 @@ build_rootfs() {
     # 创建 2G 空白文件，具体所需大小根据 sudo du -h --max-depth=0 "$ROOTFS_PATH" 调整
     dd if=/dev/zero of="$ROOTFS_IMAGE" bs=1M count=2048 oflag=sync status=progress
     # 格式化为 ext4 分区
-    mkfs.ext4 "$ROOTFS_IMAGE"
+    mkfs.ext4 -F -L rootfs "$ROOTFS_IMAGE"
 
     # 复制 rootfs 文件到镜像
     mount "$ROOTFS_IMAGE" /mnt

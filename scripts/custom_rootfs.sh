@@ -37,8 +37,11 @@ ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 # 更新软件包
 apt update && apt dist-upgrade -y
 
+# 允许 root 远程登录
+echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+
 # 修改默认密码
-echo "root:1234" | chpasswd
+echo 'root:1234' | chpasswd
 # 设置密码过期
 chage -d 0 root
 
