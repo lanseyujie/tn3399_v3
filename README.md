@@ -1,5 +1,7 @@
 # TN3399_V3
 
+> 镜像下载：https://github.com/lanseyujie/tn3399_v3/releases
+
 ## 规格参数
 
 |   部件名称    |       芯片型号       |                           备注说明                           |
@@ -174,7 +176,7 @@ git remote add upstream https://git.kernel.org/pub/scm/linux/kernel/git/stable/l
 git fetch upstream
 
 # 切换内核版本
-git checkout linux-5.4.y
+git checkout linux-5.8.y
 
 # 防止版本号后出现 -dirty 等后缀
 touch .scmversion
@@ -534,6 +536,47 @@ cat /sys/firmware/fdt > raw.dtb
 
 # 内核编译选项
 zcat /proc/config.gz > kernel.config
+```
+
+---
+
+Q：如何连接蓝牙音箱？
+
+A：使用如下命令连接：
+
+```shell
+sudo apt install -y bluez bluez-tools pulseaudio pulseaudio-module-bluetooth
+
+# 查看蓝牙信息
+hciconfig
+
+# 使用 bluetoothctl 命令操作蓝牙
+# 上电
+power on
+# 扫描
+scan on
+# 配对
+pair MAC
+# 信任
+trust MAC
+# 连接
+connect MAC
+
+# 如果连接时出现 Failed to connect: org.bluez.Error.Failed 可以通过重启 pulseaudio 解决
+pulseaudio -k
+pulseaudio --start
+
+# 声道测试
+speaker-test -c2 -twav
+
+# 查看 PulseAudio 信息
+pactl info
+
+# 查看音频输出通道
+pactl list sinks
+
+# 设置为默认音频输出通道，通过 TAB 补全后面的名称
+pactl set-default-sink bluez_sink.MAC.a2dp_sink
 ```
 
 ## 参考资料
