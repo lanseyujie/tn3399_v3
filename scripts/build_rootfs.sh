@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 # build_rootfs.sh is only for tn3399_v3 dev board
 # see https://github.com/lanseyujie/tn3399_v3.git
@@ -16,7 +16,6 @@ OUTPUT_PATH=$PROJECT_PATH/out
 OVERLAY_PATH=$PROJECT_PATH/overlay
 ROOTFS_PATH=$OUTPUT_PATH/rootfs
 
-UBUNTU_VERSION=20.04
 TARGET=$1
 
 mount_rootfs() {
@@ -29,15 +28,18 @@ mount_rootfs() {
 }
 
 umount_rootfs() {
-    umount "$ROOTFS_PATH"/proc
-    umount "$ROOTFS_PATH"/sys
     umount "$ROOTFS_PATH"/dev/pts
     umount "$ROOTFS_PATH"/dev
+    umount "$ROOTFS_PATH"/sys
+    umount "$ROOTFS_PATH"/proc
 
     echo "ROOTFS: UNMOUNTED"
 }
 
 custom_rootfs() {
+    rm -rf "$ROOTFS_PATH"
+    mkdir -p "$ROOTFS_PATH"
+
     # 安装构建工具
     apt install -y qemu-user-static debootstrap
     # 构建 rootfs
@@ -62,9 +64,6 @@ custom_rootfs() {
 
     # 卸载路径
     umount_rootfs
-
-    # 清理工作
-    rm -f "$ROOTFS_PATH"/usr/bin/qemu-aarch64-static
 
     echo "ROOTFS: BUILD SUCCEED"
 }

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 # factory_image.sh is only for tn3399_v3 dev board
 # see https://github.com/lanseyujie/tn3399_v3.git

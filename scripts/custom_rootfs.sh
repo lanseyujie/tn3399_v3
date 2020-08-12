@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 # custom_rootfs.sh is only for tn3399_v3 dev board
 # see https://github.com/lanseyujie/tn3399_v3.git
@@ -12,7 +12,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # 继续构建第二阶段
-debootstrap/debootstrap --second-stage
+/debootstrap/debootstrap --second-stage
 
 # 修改主机名
 echo ubuntu >/etc/hostname
@@ -48,7 +48,22 @@ chage -d 0 root
 # ttyS2
 ln -s /lib/systemd/system/serial-getty\@.service /etc/systemd/system/getty.target.wants/serial-getty@ttyS2.service
 
-# 清理缓存
+# 问题报告
+cat >/etc/update-motd.d/60-issue-report<<EOF
+#!/bin/sh
+#
+# 60-issue-report is only for tn3399_v3 dev board
+# see https://github.com/lanseyujie/tn3399_v3.git
+# Wildlife <admin@lanseyujie.com>
+# 2020.08.12
+
+printf "\n"
+printf " * Issue: https://github.com/lanseyujie/tn3399_v3/issues"
+EOF
+chmod +x /etc/update-motd.d/60-issue-report
+
+# 清理
 apt clean
 rm -rf /var/lib/apt/lists/*
 rm -f ~/.bash_history
+rm -f /usr/bin/qemu-aarch64-static
