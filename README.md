@@ -181,6 +181,7 @@ touch .scmversion
 
 # 修改设备树
 cat ../tn3399_v3/config/tn3399-linux.dts > ./arch/arm64/boot/dts/rockchip/rk3399-rock960.dts
+sed -i 's/bcm4329-fmac/bcm43455-fmac/g' ./arch/arm64/boot/dts/rockchip/rk3399-rock960.dtsi
 
 # 清理工程
 make distclean
@@ -424,6 +425,20 @@ sudo dpkg-reconfigure tzdata
 sudo hwclock -s
 ```
 
+### 分区扩容
+
+```shell
+sudo apt install -y parted
+sudo parted /dev/mmcblk2
+unit s
+print
+resizepart 5 100%
+print
+Q
+
+sudo resize2fs /dev/mmcblk2p5
+```
+
 ## 常见问题
 
 Q：能进 MaskRom 模式，但下载 Loader 初始化 DRAM 总是失败。或 u-boot 无等待时间不能按 RECOVERY 键进入 MaskRom 模式。
@@ -526,6 +541,7 @@ zcat /proc/config.gz > kernel.config
 [^1]: [Boot option - Rockchip open source Document](http://opensource.rock-chips.com/wiki_Boot_option)
 
 [^2]: [U-Boot v2020.01 和 Linux 5.4 在 RK3399 上部署](https://aijishu.com/a/1060000000079034)
+
 [^3]: [ATF - Rockchip open source Document](http://opensource.rock-chips.com/wiki_ATF)
 
 [^4]: [U-Boot - Rockchip open source Document](http://opensource.rock-chips.com/wiki_U-Boot)
