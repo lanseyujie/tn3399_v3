@@ -441,6 +441,24 @@ Q
 sudo resize2fs /dev/mmcblk2p5
 ```
 
+### Docker
+
+```shell
+sudo apt install gnupg2 -y
+
+# 添加 apt 公钥
+curl -fsSL https://download.docker.com/linux/debian/gpg | sudo apt-key add -
+
+# 添加软件源
+echo "deb [arch=arm64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+
+# 安装 docker
+sudo apt update && sudo apt install docker-ce -y
+
+# 非 root 用户免 sudo 操作 docker
+sudo usermod -aG docker $USER
+```
+
 ## 常见问题
 
 Q：能进 MaskRom 模式，但下载 Loader 初始化 DRAM 总是失败。或 u-boot 无等待时间不能按 RECOVERY 键进入 MaskRom 模式。
