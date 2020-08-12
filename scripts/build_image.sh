@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -eu
 
 # build_image.sh is only for tn3399_v3 dev board
 # see https://github.com/lanseyujie/tn3399_v3.git
@@ -69,7 +69,7 @@ build_boot() {
     fi
 
     cat >"$OUTPUT_PATH"/tn3399.conf <<EOF
-label kernel-5.4
+label kernel-5.8
     kernel /Image
     fdt /tn3399-linux.dtb
     append earlycon=uart8250,mmio32,0xff1a0000 swiotlb=1 coherent_pool=1m earlyprintk console=ttyS2,1500000n8 rw root=PARTUUID=b921b045-1d rootfstype=ext4 init=/sbin/init rootwait
@@ -107,8 +107,9 @@ build_rootfs() {
         exit 1
     fi
 
-    # 创建 2G 空白文件，具体所需大小根据 sudo du -h --max-depth=0 "$ROOTFS_PATH" 调整
-    dd if=/dev/zero of="$ROOTFS_IMAGE" bs=1M count=2048 oflag=sync status=progress
+    # 创建文件，具体所需大小根据 sudo du -h --max-depth=0 "$ROOTFS_PATH" 调整
+    size=$(du --max-depth=0 $OUTPUT_PATH/rootfs | cut -f 1)
+    dd if=/dev/zero of="$ROOTFS_IMAGE" bs=1M count=$(($size / 1024 + 512)) oflag=sync status=progress
     # 格式化为 ext4 分区
     mkfs.ext4 -F -L rootfs "$ROOTFS_IMAGE"
 
