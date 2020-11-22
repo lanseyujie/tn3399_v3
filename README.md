@@ -166,7 +166,7 @@ cat ../rkbin/bin/rk33/rk3399_miniloader_v1.26.bin >> idbloader.img
 > 此仓库约占用 3 GB，编译后约占用 8 GB，请至少留有 10 GB 硬盘空间，编译大约需要 40 分钟。
 
 ```shell
-apt install -y libssl-dev lzop kmod
+apt install -y libssl-dev lzop kmod flex bison
 git clone https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git
 
 # 或从镜像快速克隆
@@ -399,9 +399,124 @@ miniterm /dev/ttyUSB0 1500000
 
 ### 网络
 
+#### 有线
+
+```shell
+# 使用 netplan 配置以太网络
+sudo nano /etc/netplan/01-netcfg.yaml
+
+# 配置为动态获取 IP
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: yes
+
+# 或静态 IP
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+     dhcp4: no
+     addresses: [10.0.0.10/24]
+     gateway4: 10.0.0.1
+     nameservers:
+       addresses: [223.5.5.5,223.6.6.6]
+
+# 应用配置
+sudo netplan --debug apply
+```
+
+#### 无线
+
 ```shell
 # WiFi 配置
 nmcli dev wifi connect "hotspot-name" password "password"
+
+# 或使用 nmtui 命令图形化修改
+```
+
+#### 热点
+
+使用 hostapd + isc-dhcp-server
+
+```shell
+sudo apt install -y hostapd isc-dhcp-server
+
+# 配置 hostapd
+sudo nano /etc/hostapd/hostapd.conf
+interface=wlan0
+driver=nl80211
+ssid=hostspot-name
+macaddr_acl=0
+auth_algs=1
+#auth_algs=3
+ignore_broadcast_ssid=0
+hw_mode=g
+channel=6
+wpa=2
+wpa_passphrase=password
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=CCMP
+#wpa_pairwise=TKIP
+#rsn_pairwise=CCMP
+
+# 修改 hostapd 默认配置文件路径
+sudo nano /etc/default/hostapd
+DAEMON_CONF=/etc/hostapd/hostapd.conf
+
+# 重启 hostapd
+sudo service hostapd restart
+sudo service hostapd status
+
+# dhcp 配置
+sudo nano /etc/dhcp/dhcp.conf
+#option domain-name "example.org";
+#option domain-name-servers ns1.example.org, ns2.example.org;
+authoritative;
+subnet 10.0.0.0 netmask 255.255.255.0 {
+    range 10.0.0.10 10.0.0.200;
+    option broadcast-address 10.0.0.255;
+    option routers 10.0.0.1;
+    default-lease-time 600;
+    max-lease-time 7200;
+    option domain-name "local";
+    option domain-name-servers 223.5.5.5, 8.8.4.4;
+}
+
+# 设置 dhcp 网口
+# 不进行操作会出现错误：Not configured to listen on any interfaces!
+sudo nano /etc/default/isc-dhcp-server
+INTERFACESv4="wlan0"
+INTERFACESv6="wlan0"
+
+# 设置 wlan0 地址
+# 不进行操作会出现错误：Not configured to listen on any interfaces!
+sudo ip addr add 10.0.0.1/24 dev wlan0
+
+# 开启转发
+sudo sysctl -w net.ipv4.ip_forward=1
+sudo iptables -t nat -A POSTROUTING -s 10.0.0.1/24 -o eth0 -j MASQUERADE
+
+# 启动 dhcp 服务
+sudo service isc-dhcp-server restart
+sudo service isc-dhcp-server status
+```
+
+使用 network-manager + dnsmasq
+
+```shell
+# 此方按创建的 2.4G 热点会出现部分旧设备连接不上
+sudo apt install -y dnsmasq
+#nmcli dev wifi hotspot ifname wlan0 ssid "hotspot-name" password "password"
+nmcli connection add type wifi ifname wlan0 con-name "Hostspot" autoconnect no ssid "hotspot-name"
+nmcli connection modify "Hostspot" 802-11-wireless.mode ap 802-11-wireless.band bg ipv4.method shared
+nmcli connection modify "Hostspot" wifi-sec.key-mgmt wpa-psk
+nmcli connection modify "Hostspot" wifi-sec.psk "password"
+nmcli connection up "Hostspot"
+
 # 或使用 nmtui 命令图形化修改
 ```
 
@@ -505,37 +620,7 @@ lo      loopback  unmanaged  --
 nmcli dev set eth0 managed yes
 ```
 
-A：原因在于 network-manager 的默认配置 /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf 不会托管以太网卡[^7]。解决方法如下：
-
-```shell
-# 使用 netplan 配置以太网络
-sudo nano /etc/netplan/01-netcfg.yaml
-
-# 配置为动态获取 IP
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    eth0:
-      dhcp4: yes
-
-# 或静态 IP
-network:
-  version: 2
-  renderer: networkd
-  ethernets:
-    eth0:
-     dhcp4: no
-     addresses: [10.0.0.10/24]
-     gateway4: 10.0.0.1
-     nameservers:
-       addresses: [223.5.5.5,223.6.6.6]
-
-# 应用配置
-sudo netplan --debug apply
-```
-
-也可以使用 network-manager 托管所有网络设备，尽管官方不推荐这样做。
+A：原因在于 Ubuntu 更推荐使用 netplan 配置以太网络，默认的 network-manager 配置 /usr/lib/NetworkManager/conf.d/10-globally-managed-devices.conf 不会托管以太网卡[^7]。若要使用 network-manager 托管所有网络设备操作如下：
 
 ```shell
 # 覆盖默认配置
