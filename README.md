@@ -1,5 +1,7 @@
 # TN3399_V3
 
+> 资料下载：链接: https://pan.baidu.com/s/1EM7RncJ69zIIchJWVpzsmA 提取码: nqz7
+>
 > 镜像下载：https://github.com/lanseyujie/tn3399_v3/releases
 
 ## 规格参数
@@ -352,7 +354,7 @@ rkdeveloptool ppt
     ./rkbin/tools/upgrade_tool db ./rk3399_loader_v1.22.119.bin
     # 或
     rkdeveloptool db ./rk3399_loader_v1.22.119.bin
-
+    
     # 下载镜像
     ./rkbin/tools/upgrade_tool wl 0x0 ./system.img
     # 或
